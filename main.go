@@ -22,7 +22,7 @@ func main() {
 		Poller: &tele.LongPoller{Timeout: 10 * time.Second},
 	}
 
-	err := initCountryList()
+	err := initList()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -37,6 +37,7 @@ func main() {
 
 	b.Handle("/remake", CommandRemake)
 	b.Handle("/remake_data", CommandRemakeData)
-
+	b.Handle("/eat", CommandEat)
+	b.Handle(tele.OnText, CommandOnText)
 	b.Start()
 }

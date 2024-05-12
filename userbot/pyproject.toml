@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "userbot"
+version = "0.1.0"
+description = ""
+authors = ["purofle <purofle@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pyrogram = "^2.0.106"
+fastapi = "^0.111.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
