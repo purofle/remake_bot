@@ -10,5 +10,6 @@ FROM alpine:latest
 WORKDIR /src
 COPY --from=build /bot bot
 COPY --from=build /src/countries.json countries.json
+COPY --from=build /src/user_list.json user_list.json
 
 CMD [ "/src/bot" ]
