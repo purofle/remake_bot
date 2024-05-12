@@ -110,7 +110,7 @@ func CommandEat(c tele.Context) error {
 		return nil
 	}
 
-	method := []string{"炒", "蒸", "煮"}
+	method := []string{"炒", "蒸", "煮", "红烧", "爆炒", "烤", "炸", "煎", "炖", "焖", "炖", "卤"}
 
 	// 获取时间段
 	hour := time.Now().Hour()
