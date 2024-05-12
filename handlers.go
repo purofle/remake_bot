@@ -105,6 +105,11 @@ func CommandRemakeData(c tele.Context) error {
 }
 
 func CommandEat(c tele.Context) error {
+	if !(c.Chat().Type == tele.ChatPrivate || c.Chat().ID == -1001965344356) {
+		fmt.Println(c.Chat().ID)
+		return nil
+	}
+
 	method := []string{"炒", "蒸", "煮"}
 
 	// 获取时间段
@@ -135,6 +140,11 @@ func CommandEat(c tele.Context) error {
 }
 
 func CommandOnText(c tele.Context) error {
+
+	if c.Chat().ID != -1001965344356 {
+		return nil
+	}
+
 	if c.Message().ReplyTo != nil {
 		text := quotely.QuoteReply(c.Bot(), c.Message())
 		if text != "" {
