@@ -3,10 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/purofle/remake_bot/quotely"
 	tele "gopkg.in/telebot.v3"
 	"math/rand"
+	crand "math/rand"
 	"os"
+	"strings"
 	"sync"
+	"time"
 )
 
 type Country struct {
@@ -16,11 +20,12 @@ type Country struct {
 
 var (
 	countryList     []Country
+	userList        []string
 	totalPopulation int64
 	mutex           sync.Mutex
 )
 
-func initCountryList() error {
+func initList() error {
 	rawJson, err := os.ReadFile("countries.json")
 	if err != nil {
 		return err
@@ -35,6 +40,13 @@ func initCountryList() error {
 		totalPopulation += country.Population
 	}
 
+	rawJson, err = os.ReadFile("user_list.json")
+	if err != nil {
+		return err
+	}
+	if err = json.Unmarshal(rawJson, &userList); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -90,4 +102,44 @@ func CommandRemakeData(c tele.Context) error {
 	}
 
 	return c.Reply(text)
+}
+
+func CommandEat(c tele.Context) error {
+	method := []string{"炒", "蒸", "煮"}
+
+	// 获取时间段
+	hour := time.Now().Hour()
+	var hourText string
+	switch {
+	case hour > 6 && hour <= 10:
+		hourText = "早上"
+	case hour > 10 && hour <= 14:
+		hourText = "中午"
+	case hour > 14 && hour <= 17:
+		hourText = "下午"
+	case hour > 18 && hour <= 21:
+		hourText = "晚上"
+	default:
+		hourText = "宵夜"
+	}
+
+	var name string
+	if strings.Contains(c.Sender().FirstName, " | ") {
+		name = strings.Split(c.Sender().FirstName, " | ")[0]
+	} else {
+		name = c.Sender().FirstName
+	}
+
+	result := fmt.Sprintf("今天%s吃 %s %s %s", hourText, name, method[rand.Intn(len(method))], userList[crand.Intn(len(userList))])
+	return c.Reply(result)
+}
+
+func CommandOnText(c tele.Context) error {
+	if c.Message().ReplyTo != nil {
+		text := quotely.QuoteReply(c.Bot(), c.Message())
+		if text != "" {
+			return c.Reply(text, tele.ModeMarkdownV2)
+		}
+	}
+	return nil
 }
