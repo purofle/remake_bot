@@ -69,7 +69,9 @@ func getRandomCountry() Country {
 
 func CommandRemake(c tele.Context) error {
 
-	remakeData := []string{"男孩子", "女孩子", "MtF", "FtM", "MtC", "萝莉", "正太", "武装直升机", "沃尔玛购物袋", "星巴克", "太监", "无性别", "扶她", "死胎"}
+	msg := c.Message()
+
+	remakeData := []string{"男孩子", "女孩子", "MtF", "FtM", "MtC", "萝莉", "正太", "武装直升机", "沃尔玛购物袋", "星巴克", "无性别", "扶她", "死胎"}
 
 	remakeResult := rand.Intn(len(remakeData))
 	randomCountry := getRandomCountry()
@@ -89,7 +91,19 @@ func CommandRemake(c tele.Context) error {
 
 	text := fmt.Sprintf("转生成功！您现在是 %s 的 %s 了。", randomCountry.CountryName, remakeData[remakeResult])
 
-	return c.Reply(text)
+	reply, err := c.Bot().Reply(msg, text)
+	if err != nil {
+		return err
+	}
+
+	time.AfterFunc(3*time.Second, func() {
+		err = c.Bot().Delete(reply)
+		err = c.Bot().Delete(msg)
+		if err != nil {
+			return
+		}
+	})
+	return nil
 }
 
 func CommandRemakeData(c tele.Context) error {

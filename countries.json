@@ -1,50 +1,50 @@
 [
   {
-    "country": "Afghanistan",
+    "country": "阿富汗",
     "population": 37172386
   },
   {
-    "country": "Albania",
+    "country": "阿尔巴尼亚",
     "population": 2866376
   },
   {
-    "country": "Algeria",
+    "country": "阿尔及利亚",
     "population": 42228429
   },
   {
-    "country": "American Samoa",
+    "country": "美属萨摩亚",
     "population": 55465
   },
   {
-    "country": "Andorra",
+    "country": "安道尔",
     "population": 77006
   },
   {
-    "country": "Angola",
+    "country": "安哥拉",
     "population": 30809762
   },
   {
-    "country": "Anguilla",
+    "country": "安圭拉",
     "population": 15094
   },
   {
-    "country": "Antarctica",
+    "country": "南极洲",
     "population": 1106
   },
   {
-    "country": "Antigua and Barbuda",
+    "country": "安提瓜和巴布达",
     "population": 96286
   },
   {
-    "country": "Argentina",
+    "country": "阿根廷",
     "population": 44494502
   },
   {
-    "country": "Armenia",
+    "country": "亚美尼亚",
     "population": 2951776
   },
   {
-    "country": "Aruba",
+    "country": "阿鲁巴",
     "population": 105845
   },
   {
@@ -52,7 +52,7 @@
     "population": 24982688
   },
   {
-    "country": "Austria",
+    "country": "奥地利",
     "population": 8840521
   },
   {
@@ -60,23 +60,23 @@
     "population": 9939800
   },
   {
-    "country": "Bahamas",
+    "country": "巴哈马",
     "population": 385640
   },
   {
-    "country": "Bahrain",
+    "country": "巴林",
     "population": 1569439
   },
   {
-    "country": "Bangladesh",
+    "country": "孟加拉国",
     "population": 161356039
   },
   {
-    "country": "Barbados",
+    "country": "巴巴多斯",
     "population": 286641
   },
   {
-    "country": "Belarus",
+    "country": "白俄罗斯",
     "population": 9483499
   },
   {
@@ -84,51 +84,51 @@
     "population": 11433256
   },
   {
-    "country": "Belize",
+    "country": "伯利兹",
     "population": 383071
   },
   {
-    "country": "Benin",
+    "country": "贝宁",
     "population": 11485048
   },
   {
-    "country": "Bermuda",
+    "country": "百慕大",
     "population": 63973
   },
   {
-    "country": "Bhutan",
+    "country": "不丹",
     "population": 754394
   },
   {
-    "country": "Bolivia",
+    "country": "玻利维亚",
     "population": 11353142
   },
   {
-    "country": "Bosnia and Herzegovina",
+    "country": "波斯尼亚和黑塞哥维那",
     "population": 3323929
   },
   {
-    "country": "Botswana",
+    "country": "博茨瓦纳",
     "population": 2254126
   },
   {
-    "country": "Bouvet Island",
+    "country": "布韦岛",
     "population": 0
   },
   {
-    "country": "Brazil",
+    "country": "巴西",
     "population": 209469333
   },
   {
-    "country": "British Indian Ocean Territory",
+    "country": "英属印度洋领地",
     "population": 0
   },
   {
-    "country": "Brunei",
+    "country": "文莱",
     "population": 428962
   },
   {
-    "country": "Bulgaria",
+    "country": "保加利亚",
     "population": 7025037
   },
   {
@@ -136,43 +136,43 @@
     "population": 19751535
   },
   {
-    "country": "Burundi",
+    "country": "布隆迪",
     "population": 11175378
   },
   {
-    "country": "Cabo Verde",
+    "country": "佛得角",
     "population": 555987
   },
   {
-    "country": "Cambodia",
+    "country": "柬埔寨",
     "population": 16249798
   },
   {
-    "country": "Cameroon",
+    "country": "喀麦隆",
     "population": 25216237
   },
   {
-    "country": "Canada",
+    "country": "加拿大",
     "population": 37057765
   },
   {
-    "country": "Cape Verde",
+    "country": "佛得角",
     "population": 543767
   },
   {
-    "country": "Cayman Islands",
+    "country": "开曼群岛",
     "population": 64174
   },
   {
-    "country": "Central African Republic",
+    "country": "中非共和国",
     "population": 4666377
   },
   {
-    "country": "Chad",
+    "country": "乍得",
     "population": 15477751
   },
   {
-    "country": "Chile",
+    "country": "智利",
     "population": 18729160
   },
   {
@@ -180,71 +180,71 @@
     "population": 1411750000
   },
   {
-    "country": "Christmas Island",
+    "country": "圣诞岛",
     "population": 1402
   },
   {
-    "country": "Cocos (Keeling) Islands",
+    "country": "科科斯（基林）群岛",
     "population": 596
   },
   {
-    "country": "Colombia",
+    "country": "哥伦比亚",
     "population": 49648685
   },
   {
-    "country": "Comoros",
+    "country": "科摩罗",
     "population": 832322
   },
   {
-    "country": "Congo",
+    "country": "刚果（布）",
     "population": 5244363
   },
   {
-    "country": "Cook Islands",
+    "country": "库克群岛",
     "population": 17379
   },
   {
-    "country": "Costa Rica",
+    "country": "哥斯达黎加",
     "population": 4999441
   },
   {
-    "country": "Croatia",
+    "country": "克罗地亚",
     "population": 4087843
   },
   {
-    "country": "Cuba",
+    "country": "古巴",
     "population": 11338138
   },
   {
-    "country": "Cyprus",
+    "country": "塞浦路斯",
     "population": 1189265
   },
   {
-    "country": "Czech Republic",
+    "country": "捷克共和国",
     "population": 10629928
   },
   {
-    "country": "Denmark",
+    "country": "丹麦",
     "population": 5793636
   },
   {
-    "country": "Djibouti",
+    "country": "吉布提",
     "population": 958920
   },
   {
-    "country": "Dominica",
+    "country": "多米尼加",
     "population": 71625
   },
   {
-    "country": "Dominican Republic",
+    "country": "多米尼加共和国",
     "population": 10627165
   },
   {
-    "country": "East Timor",
+    "country": "东帝汶",
     "population": 1267972
   },
   {
-    "country": "Ecuador",
+    "country": "厄瓜多尔",
     "population": 17084357
   },
   {
@@ -252,23 +252,23 @@
     "population": 98423595
   },
   {
-    "country": "El Salvador",
+    "country": "萨尔瓦多",
     "population": 6420744
   },
   {
-    "country": "England",
+    "country": "英格兰",
     "population": 55619400
   },
   {
-    "country": "Equatorial Guinea",
+    "country": "赤道几内亚",
     "population": 1308974
   },
   {
-    "country": "Eritrea",
+    "country": "厄立特里亚",
     "population": 6213972
   },
   {
-    "country": "Estonia",
+    "country": "爱沙尼亚",
     "population": 1321977
   },
   {
@@ -276,19 +276,19 @@
     "population": 109224559
   },
   {
-    "country": "Falkland Islands",
+    "country": "福克兰群岛",
     "population": 2840
   },
   {
-    "country": "Faroe Islands",
+    "country": "法罗群岛",
     "population": 48497
   },
   {
-    "country": "Fiji Islands",
+    "country": "斐济群岛",
     "population": 883483
   },
   {
-    "country": "Finland",
+    "country": "芬兰",
     "population": 5515525
   },
   {
@@ -296,103 +296,103 @@
     "population": 66977107
   },
   {
-    "country": "French Guiana",
+    "country": "法属圭亚那",
     "population": 290691
   },
   {
-    "country": "French Polynesia",
+    "country": "法属波利尼西亚",
     "population": 277679
   },
   {
-    "country": "French Southern territories",
+    "country": "法属南部领地",
     "population": 0
   },
   {
-    "country": "Gabon",
+    "country": "加蓬",
     "population": 2119275
   },
   {
-    "country": "Gambia",
+    "country": "冈比亚",
     "population": 2280102
   },
   {
-    "country": "Georgia",
+    "country": "格鲁吉亚",
     "population": 3726549
   },
   {
-    "country": "Germany",
+    "country": "德国",
     "population": 82905782
   },
   {
-    "country": "Ghana",
+    "country": "加纳",
     "population": 29767108
   },
   {
-    "country": "Gibraltar",
+    "country": "直布罗陀",
     "population": 33718
   },
   {
-    "country": "Greece",
+    "country": "希腊",
     "population": 10731726
   },
   {
-    "country": "Greenland",
+    "country": "格陵兰",
     "population": 56025
   },
   {
-    "country": "Grenada",
+    "country": "格林纳达",
     "population": 111454
   },
   {
-    "country": "Guadeloupe",
+    "country": "瓜德罗普岛",
     "population": 395700
   },
   {
-    "country": "Guam",
+    "country": "关岛",
     "population": 165768
   },
   {
-    "country": "Guatemala",
+    "country": "危地马拉",
     "population": 17247807
   },
   {
-    "country": "Guinea",
+    "country": "几内亚",
     "population": 12414318
   },
   {
-    "country": "Guinea-Bissau",
+    "country": "几内亚比绍",
     "population": 1874309
   },
   {
-    "country": "Guyana",
+    "country": "圭亚那",
     "population": 779004
   },
   {
-    "country": "Haiti",
+    "country": "海地",
     "population": 11123176
   },
   {
-    "country": "Heard Island and McDonald Islands",
+    "country": "赫德岛和麦克唐纳群岛",
     "population": 0
   },
   {
-    "country": "Holy See (Vatican City State)",
+    "country": "梵蒂冈城国",
     "population": 825
   },
   {
-    "country": "Honduras",
+    "country": "洪都拉斯",
     "population": 9587522
   },
   {
-    "country": "Hong Kong",
+    "country": "香港",
     "population": 7451000
   },
   {
-    "country": "Hungary",
+    "country": "匈牙利",
     "population": 9775564
   },
   {
-    "country": "Iceland",
+    "country": "冰岛",
     "population": 352721
   },
   {
@@ -404,31 +404,31 @@
     "population": 267663435
   },
   {
-    "country": "Iran",
+    "country": "伊朗",
     "population": 81800269
   },
   {
-    "country": "Iraq",
+    "country": "伊拉克",
     "population": 38433600
   },
   {
-    "country": "Ireland",
+    "country": "爱尔兰",
     "population": 4867309
   },
   {
-    "country": "Israel",
+    "country": "以色列",
     "population": 8882800
   },
   {
-    "country": "Italy",
+    "country": "意大利",
     "population": 60421760
   },
   {
-    "country": "Ivory Coast",
+    "country": "科特迪瓦",
     "population": 25069229
   },
   {
-    "country": "Jamaica",
+    "country": "牙买加",
     "population": 2934855
   },
   {
@@ -436,163 +436,163 @@
     "population": 126529100
   },
   {
-    "country": "Jordan",
+    "country": "约旦",
     "population": 9956011
   },
   {
-    "country": "Kazakhstan",
+    "country": "哈萨克斯坦",
     "population": 18272430
   },
   {
-    "country": "Kenya",
+    "country": "肯尼亚",
     "population": 51393010
   },
   {
-    "country": "Kiribati",
+    "country": "基里巴斯",
     "population": 115847
   },
   {
-    "country": "Kuwait",
+    "country": "科威特",
     "population": 4137309
   },
   {
-    "country": "Kyrgyzstan",
+    "country": "吉尔吉斯斯坦",
     "population": 6322800
   },
   {
-    "country": "Laos",
+    "country": "老挝",
     "population": 7061507
   },
   {
-    "country": "Latvia",
+    "country": "拉脱维亚",
     "population": 1927174
   },
   {
-    "country": "Lebanon",
+    "country": "黎巴嫩",
     "population": 6848925
   },
   {
-    "country": "Lesotho",
+    "country": "莱索托",
     "population": 2108132
   },
   {
-    "country": "Liberia",
+    "country": "利比里亚",
     "population": 4818977
   },
   {
-    "country": "Libyan Arab Jamahiriya",
+    "country": "阿拉伯利比亚民众国",
     "population": 6678567
   },
   {
-    "country": "Liechtenstein",
+    "country": "列支敦士登",
     "population": 37910
   },
   {
-    "country": "Lithuania",
+    "country": "立陶宛",
     "population": 2801543
   },
   {
-    "country": "Luxembourg",
+    "country": "卢森堡",
     "population": 607950
   },
   {
-    "country": "Macao",
+    "country": "澳门",
     "population": 631636
   },
   {
-    "country": "North Macedonia",
+    "country": "北马其顿",
     "population": 2084367
   },
   {
-    "country": "Madagascar",
+    "country": "马达加斯加",
     "population": 26262368
   },
   {
-    "country": "Malawi",
+    "country": "马拉维",
     "population": 18143315
   },
   {
-    "country": "Malaysia",
+    "country": "马来西亚",
     "population": 31528585
   },
   {
-    "country": "Maldives",
+    "country": "马尔代夫",
     "population": 515696
   },
   {
-    "country": "Mali",
+    "country": "马里",
     "population": 19077690
   },
   {
-    "country": "Malta",
+    "country": "马耳他",
     "population": 484630
   },
   {
-    "country": "Marshall Islands",
+    "country": "马绍尔群岛",
     "population": 58413
   },
   {
-    "country": "Martinique",
+    "country": "马提尼克岛",
     "population": 376480
   },
   {
-    "country": "Mauritania",
+    "country": "毛里塔尼亚",
     "population": 4403319
   },
   {
-    "country": "Mauritius",
+    "country": "毛里求斯",
     "population": 1265303
   },
   {
-    "country": "Mayotte",
+    "country": "马约特岛",
     "population": 270372
   },
   {
-    "country": "Mexico",
+    "country": "墨西哥",
     "population": 126190788
   },
   {
-    "country": "Micronesia, Federated States of",
+    "country": "密克罗尼西亚联邦",
     "population": 112640
   },
   {
-    "country": "Moldova",
+    "country": "摩尔多瓦",
     "population": 2706049
   },
   {
-    "country": "Monaco",
+    "country": "摩纳哥",
     "population": 38682
   },
   {
-    "country": "Mongolia",
+    "country": "蒙古",
     "population": 3170208
   },
   {
-    "country": "Montenegro",
+    "country": "黑山",
     "population": 631219
   },
   {
-    "country": "Montserrat",
+    "country": "蒙特塞拉特",
     "population": 5900
   },
   {
-    "country": "Morocco",
+    "country": "摩洛哥",
     "population": 36029138
   },
   {
-    "country": "Mozambique",
+    "country": "莫桑比克",
     "population": 29495962
   },
   {
-    "country": "Myanmar",
+    "country": "缅甸",
     "population": 53708395
   },
   {
-    "country": "Namibia",
+    "country": "纳米比亚",
     "population": 2448255
   },
   {
-    "country": "Nauru",
+    "country": "瑙鲁",
     "population": 12704
   },
   {
@@ -600,59 +600,59 @@
     "population": 28087871
   },
   {
-    "country": "Netherlands",
+    "country": "荷兰",
     "population": 17231624
   },
   {
-    "country": "Netherlands Antilles",
+    "country": "荷属安的列斯",
     "population": 227049
   },
   {
-    "country": "New Caledonia",
+    "country": "新喀里多尼亚",
     "population": 284060
   },
   {
-    "country": "New Zealand",
+    "country": "新西兰",
     "population": 4841000
   },
   {
-    "country": "Nicaragua",
+    "country": "尼加拉瓜",
     "population": 6465513
   },
   {
-    "country": "Niger",
+    "country": "尼日尔",
     "population": 22442948
   },
   {
-    "country": "Nigeria",
+    "country": "尼日利亚",
     "population": 195874740
   },
   {
-    "country": "Niue",
+    "country": "纽埃",
     "population": 1624
   },
   {
-    "country": "Norfolk Island",
+    "country": "诺福克岛",
     "population": 2169
   },
   {
-    "country": "North Korea",
+    "country": "朝鲜",
     "population": 25549819
   },
   {
-    "country": "Northern Ireland",
+    "country": "北爱尔兰",
     "population": 1885400
   },
   {
-    "country": "Northern Mariana Islands",
+    "country": "北马里亚纳群岛",
     "population": 56882
   },
   {
-    "country": "Norway",
+    "country": "挪威",
     "population": 5311916
   },
   {
-    "country": "Oman",
+    "country": "阿曼",
     "population": 4829483
   },
   {
@@ -660,35 +660,35 @@
     "population": 212215030
   },
   {
-    "country": "Palau",
+    "country": "帕劳",
     "population": 17907
   },
   {
-    "country": "Palestine",
+    "country": "巴勒斯坦",
     "population": 4569087
   },
   {
-    "country": "Panama",
+    "country": "巴拿马",
     "population": 4176873
   },
   {
-    "country": "Papua New Guinea",
+    "country": "巴布亚新几内亚",
     "population": 8606316
   },
   {
-    "country": "Paraguay",
+    "country": "巴拉圭",
     "population": 6956071
   },
   {
-    "country": "Peru",
+    "country": "秘鲁",
     "population": 31989256
   },
   {
-    "country": "Philippines",
+    "country": "菲律宾",
     "population": 106651922
   },
   {
-    "country": "Pitcairn",
+    "country": "皮特凯恩群岛",
     "population": 67
   },
   {
@@ -696,23 +696,23 @@
     "population": 37974750
   },
   {
-    "country": "Portugal",
+    "country": "葡萄牙",
     "population": 10283822
   },
   {
-    "country": "Puerto Rico",
+    "country": "波多黎各",
     "population": 3195153
   },
   {
-    "country": "Qatar",
+    "country": "卡塔尔",
     "population": 2781677
   },
   {
-    "country": "Reunion",
+    "country": "留尼汪岛",
     "population": 859959
   },
   {
-    "country": "Romania",
+    "country": "罗马尼亚",
     "population": 19466145
   },
   {
@@ -720,171 +720,171 @@
     "population": 144478050
   },
   {
-    "country": "Rwanda",
+    "country": "卢旺达",
     "population": 12301939
   },
   {
-    "country": "Saint Helena",
+    "country": "圣赫勒拿岛",
     "population": 6600
   },
   {
-    "country": "Saint Kitts and Nevis",
+    "country": "圣基茨和尼维斯",
     "population": 52441
   },
   {
-    "country": "Saint Lucia",
+    "country": "圣卢西亚",
     "population": 181889
   },
   {
-    "country": "Saint Pierre and Miquelon",
+    "country": "圣皮埃尔和密克隆群岛",
     "population": 5888
   },
   {
-    "country": "Saint Vincent and the Grenadines",
+    "country": "圣文森特和格林纳丁斯",
     "population": 110210
   },
   {
-    "country": "Samoa",
+    "country": "萨摩亚",
     "population": 196130
   },
   {
-    "country": "San Marino",
+    "country": "圣马力诺",
     "population": 33785
   },
   {
-    "country": "Sao Tome and Principe",
+    "country": "圣多美和普林西比",
     "population": 211028
   },
   {
-    "country": "Saudi Arabia",
+    "country": "沙特阿拉伯",
     "population": 33699947
   },
   {
-    "country": "Scotland",
+    "country": "苏格兰",
     "population": 5424800
   },
   {
-    "country": "Senegal",
+    "country": "塞内加尔",
     "population": 15854360
   },
   {
-    "country": "Serbia",
+    "country": "塞尔维亚",
     "population": 6963764
   },
   {
-    "country": "Seychelles",
+    "country": "塞舌尔",
     "population": 96762
   },
   {
-    "country": "Sierra Leone",
+    "country": "塞拉利昂",
     "population": 7650154
   },
   {
-    "country": "Singapore",
+    "country": "新加坡",
     "population": 5638676
   },
   {
-    "country": "Slovakia",
+    "country": "斯洛伐克",
     "population": 5446771
   },
   {
-    "country": "Slovenia",
+    "country": "斯洛文尼亚",
     "population": 2073894
   },
   {
-    "country": "Solomon Islands",
+    "country": "所罗门群岛",
     "population": 652858
   },
   {
-    "country": "Somalia",
+    "country": "索马里",
     "population": 15008154
   },
   {
-    "country": "South Africa",
+    "country": "南非",
     "population": 57779622
   },
   {
-    "country": "South Georgia and the South Sandwich Islands",
+    "country": "南乔治亚和南桑威奇群岛",
     "population": 30
   },
   {
-    "country": "South Korea",
+    "country": "韩国",
     "population": 51606633
   },
   {
-    "country": "South Sudan",
+    "country": "南苏丹",
     "population": 10975920
   },
   {
-    "country": "Spain",
+    "country": "西班牙",
     "population": 46796540
   },
   {
-    "country": "Sri Lanka",
+    "country": "斯里兰卡",
     "population": 21670000
   },
   {
-    "country": "Sudan",
+    "country": "苏丹",
     "population": 41801533
   },
   {
-    "country": "Suriname",
+    "country": "苏里南",
     "population": 575991
   },
   {
-    "country": "Svalbard and Jan Mayen",
+    "country": "斯瓦尔巴群岛和扬马延岛",
     "population": 2572
   },
   {
-    "country": "Swaziland",
+    "country": "斯威士兰",
     "population": 1136191
   },
   {
-    "country": "Sweden",
+    "country": "瑞典",
     "population": 10175214
   },
   {
-    "country": "Switzerland",
+    "country": "瑞士",
     "population": 8513227
   },
   {
-    "country": "Syria",
+    "country": "叙利亚",
     "population": 16906283
   },
   {
-    "country": "Tajikistan",
+    "country": "塔吉克斯坦",
     "population": 9100837
   },
   {
-    "country": "Tanzania",
+    "country": "坦桑尼亚",
     "population": 56318348
   },
   {
-    "country": "Thailand",
+    "country": "泰国",
     "population": 69428524
   },
   {
-    "country": "The Democratic Republic of Congo",
+    "country": "刚果民主共和国",
     "population": 84068091
   },
   {
-    "country": "Togo",
+    "country": "多哥",
     "population": 7889094
   },
   {
-    "country": "Tokelau",
+    "country": "托克劳群岛",
     "population": 1411
   },
   {
-    "country": "Tonga",
+    "country": "汤加",
     "population": 103197
   },
   {
-    "country": "Trinidad and Tobago",
+    "country": "特立尼达和多巴哥",
     "population": 1389858
   },
   {
-    "country": "Tunisia",
+    "country": "突尼斯",
     "population": 11565204
   },
   {
@@ -892,27 +892,27 @@
     "population": 82319724
   },
   {
-    "country": "Turkmenistan",
+    "country": "土库曼斯坦",
     "population": 5850908
   },
   {
-    "country": "Turks and Caicos Islands",
+    "country": "特克斯和凯科斯群岛",
     "population": 37665
   },
   {
-    "country": "Tuvalu",
+    "country": "图瓦卢",
     "population": 11508
   },
   {
-    "country": "Uganda",
+    "country": "乌干达",
     "population": 42723139
   },
   {
-    "country": "Ukraine",
+    "country": "乌克兰",
     "population": 44622516
   },
   {
-    "country": "United Arab Emirates",
+    "country": "阿拉伯联合酋长国",
     "population": 9630959
   },
   {
@@ -924,59 +924,59 @@
     "population": 334830000
   },
   {
-    "country": "United States Minor Outlying Islands",
+    "country": "美国本土外小岛屿",
     "population": 300
   },
   {
-    "country": "Uruguay",
+    "country": "乌拉圭",
     "population": 3449299
   },
   {
-    "country": "Uzbekistan",
+    "country": "乌兹别克斯坦",
     "population": 32955400
   },
   {
-    "country": "Vanuatu",
+    "country": "瓦努阿图",
     "population": 292680
   },
   {
-    "country": "Venezuela",
+    "country": "委内瑞拉",
     "population": 28870195
   },
   {
-    "country": "Vietnam",
+    "country": "越南",
     "population": 95540395
   },
   {
-    "country": "Virgin Islands, British",
+    "country": "英属维尔京群岛",
     "population": 29802
   },
   {
-    "country": "Virgin Islands, U.S.",
+    "country": "美属维尔京群岛",
     "population": 106977
   },
   {
-    "country": "Wales",
+    "country": "威尔士",
     "population": 3139000
   },
   {
-    "country": "Wallis and Futuna",
+    "country": "瓦利斯和富图纳群岛",
     "population": 15289
   },
   {
-    "country": "Western Sahara",
+    "country": "西撒哈拉",
     "population": 652271
   },
   {
-    "country": "Yemen",
+    "country": "也门",
     "population": 28498687
   },
   {
-    "country": "Zambia",
+    "country": "赞比亚",
     "population": 17351822
   },
   {
-    "country": "Zimbabwe",
+    "country": "津巴布韦",
     "population": 14439018
   }
 ]
