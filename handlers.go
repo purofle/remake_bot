@@ -96,7 +96,11 @@ func CommandRemake(c tele.Context) error {
 		return err
 	}
 
-	time.AfterFunc(3*time.Second, func() {
+	if c.Chat().Type == tele.ChatPrivate {
+		return nil
+	}
+
+	time.AfterFunc(5*time.Second, func() {
 		err = c.Bot().Delete(reply)
 		err = c.Bot().Delete(msg)
 		if err != nil {
@@ -107,6 +111,9 @@ func CommandRemake(c tele.Context) error {
 }
 
 func CommandRemakeData(c tele.Context) error {
+
+	msg := c.Message()
+
 	var text string
 	userData, hasKey := remakeCount[c.Sender().ID]
 	if hasKey {
@@ -115,7 +122,23 @@ func CommandRemakeData(c tele.Context) error {
 		text = "您还没有 remake 过呢，快 /remake 吧"
 	}
 
-	return c.Reply(text)
+	reply, err := c.Bot().Reply(msg, text)
+	if err != nil {
+		return err
+	}
+
+	if c.Chat().Type == tele.ChatPrivate {
+		return nil
+	}
+
+	time.AfterFunc(10*time.Second, func() {
+		err = c.Bot().Delete(reply)
+		err = c.Bot().Delete(msg)
+		if err != nil {
+			return
+		}
+	})
+	return nil
 }
 
 func CommandEat(c tele.Context) error {
