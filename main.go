@@ -1,11 +1,14 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"os"
 	"time"
 
 	tele "gopkg.in/telebot.v3"
+
+	_ "github.com/lib/pq"
 )
 
 type RemakeData struct {
@@ -15,6 +18,7 @@ type RemakeData struct {
 }
 
 var remakeCount map[int64]*RemakeData
+var database *sql.DB
 
 func main() {
 	pref := tele.Settings{
@@ -22,7 +26,14 @@ func main() {
 		Poller: &tele.LongPoller{Timeout: 10 * time.Second},
 	}
 
-	err := initList()
+	connStr := "postgresql://postgres:114514@localhost:5432/postgres?sslmode=disable"
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	database = db
+
+	err = initList()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -35,6 +46,7 @@ func main() {
 		return
 	}
 
+	b.Handle(tele.OnQuery, InlineQuery)
 	b.Handle("/remake", CommandRemake)
 	b.Handle("/remake_data", CommandRemakeData)
 	b.Handle("/eat", CommandEat)

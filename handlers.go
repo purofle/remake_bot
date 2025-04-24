@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/purofle/remake_bot/quotely"
@@ -8,6 +9,7 @@ import (
 	"math/rand"
 	crand "math/rand"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -177,7 +179,6 @@ func CommandEat(c tele.Context) error {
 }
 
 func CommandOnText(c tele.Context) error {
-
 	if c.Chat().ID != -1001965344356 {
 		return nil
 	}
@@ -189,4 +190,82 @@ func CommandOnText(c tele.Context) error {
 		}
 	}
 	return nil
+}
+
+func getQuote(text string) (error, []string, []string) {
+	var rows *sql.Rows
+	var err error
+	if text == "" {
+		query := "select text, \"from\" from result_new where from_id not like 'channel%' order by random() limit 50"
+		rows, err = database.Query(query)
+	} else {
+		query := "select text, \"from\" from result_new where from_id not like 'channel%' AND text like '%' || $1 || '%' order by random() limit 50"
+		rows, err = database.Query(query, text)
+	}
+	if err != nil {
+		return err, nil, nil
+	}
+
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			return
+		}
+	}(rows)
+
+	var resultText []string
+	var from []string
+	for rows.Next() {
+		var t, f string
+		if err := rows.Scan(&t, &f); err != nil {
+			return err, nil, nil
+		}
+		resultText = append(resultText, t)
+		from = append(from, f)
+	}
+
+	return nil, resultText, from
+}
+
+func InlineQuery(c tele.Context) error {
+	member, err := c.Bot().ChatMemberOf(
+		&tele.Chat{ID: -1001965344356},
+		c.Sender(),
+	)
+	if err != nil {
+		fmt.Println(fmt.Sprintf("sender: %s 不在群", c.Sender().FirstName))
+		return err
+	}
+	if member.Role != "creator" {
+		fmt.Println(fmt.Sprintf("sender: %s 不在群", c.Sender().FirstName))
+		return nil
+	}
+
+	var resultText []string
+	var from []string
+
+	if c.Query().Text == "" {
+		err, resultText, from = getQuote("")
+	} else {
+		err, resultText, from = getQuote(c.Query().Text)
+	}
+	results := make(tele.Results, len(resultText))
+
+	if err != nil {
+		return err
+	}
+
+	for i, text := range resultText {
+		results[i] = &tele.ArticleResult{
+			Title:       text,
+			Text:        fmt.Sprintf("%s: %s", from[i], text),
+			Description: fmt.Sprintf("来自 %s", from[i]),
+		}
+		results[i].SetResultID(strconv.Itoa(i))
+	}
+
+	return c.Answer(&tele.QueryResponse{
+		Results:   results,
+		CacheTime: 0,
+	})
 }
