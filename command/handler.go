@@ -1,4 +1,4 @@
-package main
+package command
 
 import (
 	"database/sql"
@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/purofle/remake_bot/quotely"
 	tele "gopkg.in/telebot.v3"
+	"log"
 	"math/rand"
 	crand "math/rand"
 	"os"
@@ -20,12 +21,38 @@ type Country struct {
 	Population  int64  `json:"population"`
 }
 
+type RemakeData struct {
+	count   int64
+	country string
+	gender  string
+}
+
 var (
 	countryList     []Country
 	userList        []string
 	totalPopulation int64
 	mutex           sync.Mutex
+	remakeCount     map[int64]*RemakeData
 )
+
+var database *sql.DB
+
+func InitHandler() {
+
+	connStr := "postgresql://postgres:114514@localhost:5432/postgres?sslmode=disable"
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	database = db
+
+	err = initList()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	remakeCount = make(map[int64]*RemakeData)
+}
 
 func initList() error {
 	rawJson, err := os.ReadFile("countries.json")
