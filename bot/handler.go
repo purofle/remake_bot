@@ -1,91 +1,47 @@
-package command
+package bot
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"github.com/purofle/remake_bot/quotely"
+	"go.uber.org/zap"
 	tele "gopkg.in/telebot.v3"
-	"log"
 	"math/rand"
-	crand "math/rand"
-	"os"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 )
 
-type Country struct {
-	CountryName string `json:"country"`
-	Population  int64  `json:"population"`
+type Handler struct {
+	bot      *tele.Bot
+	logger   *zap.Logger
+	database *sql.DB
+
+	mutex  sync.Mutex
+	remake *Remake
 }
 
-type RemakeData struct {
-	count   int64
-	country string
-	gender  string
+func NewHandler(bot *tele.Bot, logger *zap.Logger) *Handler {
+	return &Handler{
+		bot:    bot,
+		logger: logger,
+	}
 }
 
-var (
-	countryList     []Country
-	userList        []string
-	totalPopulation int64
-	mutex           sync.Mutex
-	remakeCount     map[int64]*RemakeData
-)
-
-var database *sql.DB
-
-func InitHandler() {
-
-	connStr := "postgresql://postgres:114514@localhost:5432/postgres?sslmode=disable"
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		log.Fatal(err)
-	}
-	database = db
-
-	err = initList()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	remakeCount = make(map[int64]*RemakeData)
+func (h *Handler) RegisterAll() {
+	h.bot.Handle(tele.OnQuery, h.InlineQuery)
+	h.bot.Handle("/remake", h.CommandRemake)
+	h.bot.Handle("/remake_data", h.CommandRemakeData)
+	h.bot.Handle(tele.OnText, h.CommandOnText)
 }
 
-func initList() error {
-	rawJson, err := os.ReadFile("countries.json")
-	if err != nil {
-		return err
-	}
-
-	if err = json.Unmarshal(rawJson, &countryList); err != nil {
-		return err
-	}
-
-	totalPopulation = int64(0)
-	for _, country := range countryList {
-		totalPopulation += country.Population
-	}
-
-	rawJson, err = os.ReadFile("user_list.json")
-	if err != nil {
-		return err
-	}
-	if err = json.Unmarshal(rawJson, &userList); err != nil {
-		return err
-	}
-	return nil
-}
-
-func getRandomCountry() Country {
+func (h *Handler) getRandomCountry() Country {
 	// 生成随机数
-	randomNum := rand.Int63n(totalPopulation)
+	randomNum := rand.Int63n(h.remake.TotalPopulation)
 
 	// 根据随机数获取对应的国家
 	index := 0
-	for i, country := range countryList {
+	for i, country := range h.remake.CountryList {
 		if randomNum < country.Population {
 			index = i
 			break
@@ -93,30 +49,31 @@ func getRandomCountry() Country {
 		randomNum -= country.Population
 	}
 
-	return countryList[index]
+	return h.remake.CountryList[index]
 }
 
-func CommandRemake(c tele.Context) error {
-
+func (h *Handler) CommandRemake(c tele.Context) error {
 	msg := c.Message()
 
 	remakeData := []string{"男孩子", "女孩子", "MtF", "FtM", "MtC", "萝莉", "正太", "武装直升机", "沃尔玛购物袋", "星巴克", "无性别", "扶她", "死胎"}
 
 	remakeResult := rand.Intn(len(remakeData))
-	randomCountry := getRandomCountry()
+	randomCountry := h.getRandomCountry()
 
-	mutex.Lock()
-	_, hasKey := remakeCount[c.Sender().ID]
-	if !hasKey {
-		remakeCount[c.Sender().ID] = new(RemakeData)
-	}
-	oldGender := remakeCount[c.Sender().ID].count
-	remakeCount[c.Sender().ID] = &RemakeData{
-		country: randomCountry.CountryName,
-		gender:  remakeData[remakeResult],
-		count:   oldGender + 1,
-	}
-	mutex.Unlock()
+	func() {
+		h.mutex.Lock()
+		defer h.mutex.Unlock()
+		_, hasKey := h.remake.RemakeCount[c.Sender().ID]
+		if !hasKey {
+			h.remake.RemakeCount[c.Sender().ID] = new(RemakeData)
+		}
+		oldGender := h.remake.RemakeCount[c.Sender().ID].count
+		h.remake.RemakeCount[c.Sender().ID] = &RemakeData{
+			country: randomCountry.CountryName,
+			gender:  remakeData[remakeResult],
+			count:   oldGender + 1,
+		}
+	}()
 
 	text := fmt.Sprintf("转生成功！您现在是 %s 的 %s 了。", randomCountry.CountryName, remakeData[remakeResult])
 
@@ -139,12 +96,12 @@ func CommandRemake(c tele.Context) error {
 	return nil
 }
 
-func CommandRemakeData(c tele.Context) error {
+func (h *Handler) CommandRemakeData(c tele.Context) error {
 
 	msg := c.Message()
 
 	var text string
-	userData, hasKey := remakeCount[c.Sender().ID]
+	userData, hasKey := h.remake.RemakeCount[c.Sender().ID]
 	if hasKey {
 		text = fmt.Sprintf("您现在是 %s 的 %s，共 remake 了 %d 次", userData.country, userData.gender, userData.count)
 	} else {
@@ -170,42 +127,7 @@ func CommandRemakeData(c tele.Context) error {
 	return nil
 }
 
-func CommandEat(c tele.Context) error {
-	if !(c.Chat().Type == tele.ChatPrivate || c.Chat().ID == -1001965344356) {
-		fmt.Println(c.Chat().ID)
-		return nil
-	}
-
-	method := []string{"炒", "蒸", "煮", "红烧", "爆炒", "烤", "炸", "煎", "炖", "焖", "炖", "卤"}
-
-	// 获取时间段
-	hour := time.Now().Hour()
-	var hourText string
-	switch {
-	case hour > 6 && hour <= 10:
-		hourText = "早上"
-	case hour > 10 && hour <= 14:
-		hourText = "中午"
-	case hour > 14 && hour <= 17:
-		hourText = "下午"
-	case hour > 18 && hour <= 21:
-		hourText = "晚上"
-	default:
-		hourText = "宵夜"
-	}
-
-	var name string
-	if strings.Contains(c.Sender().FirstName, " | ") {
-		name = strings.Split(c.Sender().FirstName, " | ")[0]
-	} else {
-		name = c.Sender().FirstName
-	}
-
-	result := fmt.Sprintf("今天%s吃 %s %s %s", hourText, name, method[rand.Intn(len(method))], userList[crand.Intn(len(userList))])
-	return c.Reply(result)
-}
-
-func CommandOnText(c tele.Context) error {
+func (*Handler) CommandOnText(c tele.Context) error {
 	if c.Chat().ID != -1001965344356 {
 		return nil
 	}
@@ -219,15 +141,15 @@ func CommandOnText(c tele.Context) error {
 	return nil
 }
 
-func getQuote(text string) (error, []string, []string) {
+func (h *Handler) getQuote(text string) (error, []string, []string) {
 	var rows *sql.Rows
 	var err error
 	if text == "" {
 		query := "select text, \"from\" from result_new where from_id not like 'channel%' order by random() limit 50"
-		rows, err = database.Query(query)
+		rows, err = h.database.Query(query)
 	} else {
 		query := "select text, \"from\" from result_new where from_id not like 'channel%' AND text like '%' || $1 || '%' order by random() limit 50"
-		rows, err = database.Query(query, text)
+		rows, err = h.database.Query(query, text)
 	}
 	if err != nil {
 		return err, nil, nil
@@ -254,7 +176,7 @@ func getQuote(text string) (error, []string, []string) {
 	return nil, resultText, from
 }
 
-func InlineQuery(c tele.Context) error {
+func (h *Handler) InlineQuery(c tele.Context) error {
 	member, err := c.Bot().ChatMemberOf(
 		&tele.Chat{ID: -1001965344356},
 		c.Sender(),
@@ -272,9 +194,9 @@ func InlineQuery(c tele.Context) error {
 	var from []string
 
 	if c.Query().Text == "" {
-		err, resultText, from = getQuote("")
+		err, resultText, from = h.getQuote("")
 	} else {
-		err, resultText, from = getQuote(c.Query().Text)
+		err, resultText, from = h.getQuote(c.Query().Text)
 	}
 	results := make(tele.Results, len(resultText))
 
@@ -296,3 +218,38 @@ func InlineQuery(c tele.Context) error {
 		CacheTime: 0,
 	})
 }
+
+//func CommandEat(c tele.Context) error {
+//	if !(c.Chat().Type == tele.ChatPrivate || c.Chat().ID == -1001965344356) {
+//		fmt.Println(c.Chat().ID)
+//		return nil
+//	}
+//
+//	method := []string{"炒", "蒸", "煮", "红烧", "爆炒", "烤", "炸", "煎", "炖", "焖", "炖", "卤"}
+//
+//	// 获取时间段
+//	hour := time.Now().Hour()
+//	var hourText string
+//	switch {
+//	case hour > 6 && hour <= 10:
+//		hourText = "早上"
+//	case hour > 10 && hour <= 14:
+//		hourText = "中午"
+//	case hour > 14 && hour <= 17:
+//		hourText = "下午"
+//	case hour > 18 && hour <= 21:
+//		hourText = "晚上"
+//	default:
+//		hourText = "宵夜"
+//	}
+//
+//	var name string
+//	if strings.Contains(c.Sender().FirstName, " | ") {
+//		name = strings.Split(c.Sender().FirstName, " | ")[0]
+//	} else {
+//		name = c.Sender().FirstName
+//	}
+//
+//	result := fmt.Sprintf("今天%s吃 %s %s %s", hourText, name, method[rand.Intn(len(method))], userList[crand.Intn(len(userList))])
+//	return c.Reply(result)
+//}

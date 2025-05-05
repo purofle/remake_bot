@@ -15,7 +15,9 @@ func main() {
 		fx.WithLogger(func(log *zap.Logger) fxevent.Logger {
 			return &fxevent.ZapLogger{Logger: log}
 		}),
+
 		fx.Provide(bot.NewRemakeBot),
+		bot.Module,
 		fx.Invoke(func(bot *telebot.Bot) {}),
 	).Run()
 }
