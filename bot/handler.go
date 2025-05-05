@@ -21,10 +21,11 @@ type Handler struct {
 	remake *Remake
 }
 
-func NewHandler(bot *tele.Bot, logger *zap.Logger) *Handler {
+func NewHandler(bot *tele.Bot, logger *zap.Logger, remake *Remake) *Handler {
 	return &Handler{
 		bot:    bot,
 		logger: logger,
+		remake: remake,
 	}
 }
 

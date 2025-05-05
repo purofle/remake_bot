@@ -40,5 +40,8 @@ func NewRemake() *Remake {
 	for _, country := range remake.CountryList {
 		remake.TotalPopulation += country.Population
 	}
+
+	remake.RemakeCount = make(map[int64]*RemakeData)
+
 	return &remake
 }
