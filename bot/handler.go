@@ -3,7 +3,7 @@ package bot
 import (
 	"database/sql"
 	"fmt"
-	"github.com/purofle/remake_bot/quotely"
+	"github.com/purofle/remake_bot/bot/quotely"
 	"go.uber.org/zap"
 	tele "gopkg.in/telebot.v3"
 	"math/rand"
@@ -17,15 +17,18 @@ type Handler struct {
 	logger   *zap.Logger
 	database *sql.DB
 
-	mutex  sync.Mutex
-	remake *Remake
+	mutex sync.Mutex
+
+	remake         *Remake
+	messageCounter *MessageCounter
 }
 
-func NewHandler(bot *tele.Bot, logger *zap.Logger, remake *Remake) *Handler {
+func NewHandler(bot *tele.Bot, logger *zap.Logger, remake *Remake, counter *MessageCounter) *Handler {
 	return &Handler{
-		bot:    bot,
-		logger: logger,
-		remake: remake,
+		bot:            bot,
+		logger:         logger,
+		remake:         remake,
+		messageCounter: counter,
 	}
 }
 
@@ -33,7 +36,9 @@ func (h *Handler) RegisterAll() {
 	h.bot.Handle(tele.OnQuery, h.InlineQuery)
 	h.bot.Handle("/remake", h.CommandRemake)
 	h.bot.Handle("/remake_data", h.CommandRemakeData)
+	h.bot.Handle("/msg_stats", h.CommandMsgStats)
 	h.bot.Handle(tele.OnText, h.CommandOnText)
+	h.bot.Handle(tele.OnSticker, h.CommandOnSticker)
 }
 
 func (h *Handler) getRandomCountry() Country {
@@ -128,9 +133,68 @@ func (h *Handler) CommandRemakeData(c tele.Context) error {
 	return nil
 }
 
-func (*Handler) CommandOnText(c tele.Context) error {
+func (h *Handler) CommandOnSticker(c tele.Context) error {
 	if c.Chat().ID != -1001965344356 {
 		return nil
+	}
+
+	err := h.messageCounter.Increment(c.Sender().ID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *Handler) CommandMsgStats(c tele.Context) error {
+	if c.Chat().ID != -1001965344356 {
+		return nil
+	}
+
+	count, err := h.messageCounter.GetCount(c.Sender().ID)
+	if err != nil {
+		return err
+	}
+
+	topID, topCounter, err := h.messageCounter.GetTopUserInLast24Hours()
+	if err != nil {
+		return err
+	}
+
+	// 获取用户信息
+	member, err := c.Bot().ChatMemberOf(c.Chat(), &tele.User{ID: topID})
+	if err != nil {
+		return err
+	}
+
+	text := fmt.Sprintf("您今天发了 %d 条消息\n最近 24 小时内 %s 发言数量最多，为 %d 条", count, member.User.FirstName, topCounter)
+	reply, err := c.Bot().Reply(c.Message(), text)
+	if err != nil {
+		return err
+	}
+
+	if c.Chat().Type == tele.ChatPrivate {
+		return nil
+	}
+
+	time.AfterFunc(10*time.Second, func() {
+		err = c.Bot().Delete(reply)
+		err = c.Bot().Delete(c.Message())
+		if err != nil {
+			return
+		}
+	})
+	return nil
+}
+
+func (h *Handler) CommandOnText(c tele.Context) error {
+	if c.Chat().ID != -1001965344356 {
+		return nil
+	}
+
+	err := h.messageCounter.Increment(c.Sender().ID)
+	if err != nil {
+		return err
 	}
 
 	if c.Message().ReplyTo != nil {
