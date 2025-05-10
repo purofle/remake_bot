@@ -167,7 +167,7 @@ func (h *Handler) CommandMsgStats(c tele.Context) error {
 		return err
 	}
 
-	text := fmt.Sprintf("您今天发了 %d 条消息\n最近 24 小时内 %s 发言数量最多，为 %d 条", count, member.User.FirstName, topCounter)
+	text := fmt.Sprintf("您今天发了 %d 条消息\n最近 24 小时内的龙王是 %s！一共水了 %d 条消息", count, member.User.FirstName, topCounter)
 	reply, err := c.Bot().Reply(c.Message(), text)
 	if err != nil {
 		return err
