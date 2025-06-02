@@ -1,0 +1,30 @@
+services:
+  postgres:
+    image: postgres:17
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 114514
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  sbbot:
+    build: .
+    restart: always
+    environment:
+      TOKEN: ${BOT_TOKEN}
+      DATABASE_URL: postgresql://postgres:114514@postgres:5432/postgres?sslmode=disable
+    depends_on:
+      - postgres
+
+
+volumes:
+  postgres_data:
