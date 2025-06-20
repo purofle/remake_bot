@@ -3,6 +3,8 @@ package database
 import (
 	"context"
 	"database/sql"
+	"os"
+
 	_ "github.com/lib/pq"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -11,7 +13,12 @@ import (
 var Module = fx.Provide(NewDatabase)
 
 func NewDatabase(lc fx.Lifecycle, logger *zap.Logger) (*sql.DB, error) {
-	connStr := "postgresql://postgres:114514@localhost:5432/postgres?sslmode=disable"
+	var connStr string
+	if envConnStr := os.Getenv("DATABASE_URL"); envConnStr != "" {
+		connStr = envConnStr
+	} else {
+		connStr = "postgresql://postgres:114514@localhost:5432/postgres?sslmode=disable"
+	}
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
