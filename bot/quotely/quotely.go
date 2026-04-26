@@ -22,7 +22,7 @@ func QuoteReply(bot *tele.Bot, message *tele.Message) (replyMsg string) {
 		return
 	}
 
-	senderName := EscapeText(message.Sender.FirstName + " " + message.Sender.LastName)
+	senderName := EscapeText(trimFullNameBeforePipe(message.Sender.FirstName + " " + message.Sender.LastName))
 	senderURI := fmt.Sprintf("tg://user?id=%d", message.Sender.ID)
 	replyToName := ""
 	replyToURI := ""
@@ -39,12 +39,12 @@ func QuoteReply(bot *tele.Bot, message *tele.Message) (replyMsg string) {
 	}
 
 	if message.ReplyTo != nil {
-		replyToName = EscapeText(message.ReplyTo.Sender.FirstName + " " + message.ReplyTo.Sender.LastName)
+		replyToName = EscapeText(trimFullNameBeforePipe(message.ReplyTo.Sender.FirstName + " " + message.ReplyTo.Sender.LastName))
 		replyToURI = fmt.Sprintf("tg://user?id=%d", message.ReplyTo.Sender.ID)
 
 		if message.ReplyTo.Sender.IsBot && len(message.ReplyTo.Entities) != 0 {
 			if message.ReplyTo.Entities[0].Type == "text_mention" {
-				replyToName = EscapeText(message.ReplyTo.Entities[0].User.FirstName + " " + message.ReplyTo.Entities[0].User.LastName)
+				replyToName = EscapeText(trimFullNameBeforePipe(message.ReplyTo.Entities[0].User.FirstName + " " + message.ReplyTo.Entities[0].User.LastName))
 				replyToURI = fmt.Sprintf("tg://user?id=%d", message.ReplyTo.Entities[0].User.ID)
 			}
 		}
@@ -106,5 +106,12 @@ func getUserByUsername(bot *tele.Bot, username string) string {
 	if err != nil {
 		return ""
 	}
-	return user.FirstName + " " + user.LastName
+	return trimFullNameBeforePipe(user.FirstName + " " + user.LastName)
+}
+
+func trimFullNameBeforePipe(fullName string) string {
+	if index := strings.Index(fullName, "|"); index >= 0 {
+		fullName = fullName[:index]
+	}
+	return strings.TrimSpace(fullName)
 }
