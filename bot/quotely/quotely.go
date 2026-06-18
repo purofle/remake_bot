@@ -17,6 +17,9 @@ func QuoteReply(bot *tele.Bot, message *tele.Message) (replyMsg string) {
 		}
 	}
 
+	time := message.Time().Format("2006-01-02 15:04:05")
+	strings.ReplaceAll(message.Text, "$time", time)
+
 	keywords := strings.SplitN(EscapeText(strings.Replace(message.Text, "$", "", 1)[1:]), " ", 2)
 	if len(keywords) == 0 {
 		return
@@ -74,9 +77,17 @@ func QuoteReply(bot *tele.Bot, message *tele.Message) (replyMsg string) {
 		}
 	}
 	if len(keywords) < 2 {
-		return fmt.Sprintf("[%s](%s) %s了 [%s](%s)！", senderName, senderURI, keywords[0], replyToName, replyToURI)
+		if strings.HasPrefix(message.Text, "\\") {
+			return fmt.Sprintf("[%s](%s) %s了 [%s](%s)！", replyToName, senderURI, keywords[0], senderName, replyToURI)
+		} else {
+			return fmt.Sprintf("[%s](%s) %s了 [%s](%s)！", senderName, senderURI, keywords[0], replyToName, replyToURI)
+		}
 	} else {
-		return fmt.Sprintf("[%s](%s) %s [%s](%s) %s！", senderName, senderURI, keywords[0], replyToName, replyToURI, keywords[1])
+		if strings.HasPrefix(message.Text, "\\") {
+			return fmt.Sprintf("[%s](%s) %s [%s](%s) %s！", replyToName, senderURI, keywords[0], senderName, replyToURI, keywords[1])
+		} else {
+			return fmt.Sprintf("[%s](%s) %s [%s](%s) %s！", senderName, senderURI, keywords[0], replyToName, replyToURI, keywords[1])
+		}
 	}
 }
 
