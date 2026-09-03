@@ -20,7 +20,7 @@ services:
     build: .
     restart: always
     environment:
-      TOKEN: ${BOT_TOKEN}
+      BOT_TOKEN: ${BOT_TOKEN}
       DATABASE_URL: postgresql://postgres:114514@postgres:5432/postgres?sslmode=disable
     depends_on:
       - postgres
