@@ -3,4 +3,6 @@ build/
 .workbuddy/
 .kotlin/
 *.log
-.idea
+.dockerignore
+Dockerfile
+compose.yml
