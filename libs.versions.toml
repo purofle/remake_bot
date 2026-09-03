@@ -1,0 +1,10 @@
+[versions]
+ktor = "3.5.2"
+telegrambots = "10.2.1"
+
+[libraries]
+org-telegram-telegrambots-longpolling = { module = "org.telegram:telegrambots-longpolling", version.ref = "telegrambots" }
+org-telegram-telegrambots-client = { module = "org.telegram:telegrambots-client", version.ref = "telegrambots" }
+io-github-oshai-kotlin-logging-jvm = { module = "io.github.oshai:kotlin-logging-jvm", version = "8.0.4" }
+org-apache-logging-log4j-log4j-slf4j2-impl = { module = "org.apache.logging.log4j:log4j-slf4j2-impl", version = "2.26.1" }
+org-slf4j-slf4j-api = { module = "org.slf4j:slf4j-api", version = "2.0.18" }

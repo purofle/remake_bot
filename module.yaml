@@ -1,1 +1,16 @@
 product: jvm/app
+
+dependencies:
+  - $libs.org.telegram.telegrambots.longpolling
+  - $libs.org.telegram.telegrambots.client
+  - $libs.io.github.oshai.kotlin.logging.jvm
+  - $libs.org.slf4j.slf4j.api
+  - $libs.org.apache.logging.log4j.log4j.slf4j2.impl
+  - org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2
+
+settings:
+  kotlin:
+    languageVersion: 2.4
+  jvm:
+    release: 21
+    mainClass: com.github.purofle.remakebot.MainKt
