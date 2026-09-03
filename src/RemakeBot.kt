@@ -50,7 +50,11 @@ class RemakeBot(botToken: String): DefaultLongPollingUpdateConsumer() {
 
         val command = message.getCommandReceiver()
 
-        if (command.first == null || !(command.second != null && command.second.equals(botUser.userName, ignoreCase = true))) {
+        if (command.first == null) {
+            return
+        }
+
+        if (command.second != null && !command.second.equals(botUser.userName, ignoreCase = true)) {
             return
         }
 
