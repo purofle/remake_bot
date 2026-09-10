@@ -1,5 +1,6 @@
 package com.github.purofle.remakebot
 
+import com.github.purofle.remakebot.parser.bilibili.BiliBiliParser
 import com.github.purofle.remakebot.utils.fullName
 import com.github.purofle.remakebot.utils.getCommandReceiver
 import com.github.purofle.remakebot.utils.reply
@@ -10,6 +11,7 @@ import org.telegram.telegrambots.longpolling.util.DefaultLongPollingUpdateConsum
 import org.telegram.telegrambots.meta.api.methods.GetMe
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.api.objects.User
+import org.telegram.telegrambots.meta.api.objects.message.Message
 import java.lang.management.ManagementFactory
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -33,19 +35,25 @@ class RemakeBot(botToken: String): DefaultLongPollingUpdateConsumer() {
             logger.debug { "${update.message.from.fullName}(${update.message.from.id}) -(${update.message.chat.title})>${update.message.text}" }
         }
 
+        val message = update.message
+
+        if (!message.hasText() || message.from == null) {
+            return
+        }
+
         scope.launch {
             with(telegramClient) {
-                dispatch(update)
+                dispatchMessage(message)
             }
         }
     }
 
     context(_: OkHttpTelegramClient)
-    private suspend fun dispatch(update: Update) {
-        val message = update.message
+    private suspend fun dispatchMessage(message: Message) {
 
-        if (!message.hasText() || message.from == null) {
-            return
+        BiliBiliParser.extractVideoIdOrNull(message.text)?.let {
+            val videoInfo = BiliBiliParser(it).getVideoInfo()
+            message.reply(videoInfo.toString())
         }
 
         val command = message.getCommandReceiver()
