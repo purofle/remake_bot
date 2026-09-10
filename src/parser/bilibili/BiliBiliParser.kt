@@ -1,7 +1,5 @@
 package com.github.purofle.remakebot.parser.bilibili
 
-import com.github.purofle.remakebot.data.bilibili.BiliBiliResponse
-import com.github.purofle.remakebot.data.bilibili.VideoInfo
 import com.github.purofle.remakebot.network.HttpRequest
 import io.github.oshai.kotlinlogging.KotlinLogging
 
@@ -12,27 +10,13 @@ import io.github.oshai.kotlinlogging.KotlinLogging
  */
 class BiliBiliParser(val videoId: VideoId) {
 
-    typealias VideoInfoResponse = BiliBiliResponse<VideoInfo>
+    suspend fun getVideoInfo(): String {
+        val videoInfo = BiliBiliAPI.getVideoInfo(videoId)
 
-    sealed interface VideoId {
-        data class Aid(val value: Long) : VideoId
-        data class Bvid(val value: String) : VideoId
-    }
-
-    suspend fun getVideoInfo(): VideoInfoResponse {
-        val params = when (videoId) {
-            is VideoId.Aid -> mapOf("aid" to videoId.value)
-            is VideoId.Bvid -> mapOf("bvid" to videoId.value)
-        }
-
-        val req = HttpRequest.get<VideoInfoResponse>(GET_VIDEO_INFO, params)
-
-        return req
+        return videoInfo.toString() + BiliBiliAPI.getPlayUrl(videoId, videoInfo.data.cid)
     }
 
     companion object {
-        private const val GET_VIDEO_INFO = "https://api.bilibili.com/x/web-interface/view"
-
         private val VIDEO_ID_REGEX = Regex("""(?:av|AV|aV|Av)\d+|BV\w+""")
 
         private val B23_URL_REGEX = Regex("""https?://b23\.tv/\w+""")

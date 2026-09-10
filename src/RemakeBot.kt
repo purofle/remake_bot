@@ -53,7 +53,7 @@ class RemakeBot(botToken: String): DefaultLongPollingUpdateConsumer() {
 
         BiliBiliParser.extractVideoIdOrNull(message.text)?.let {
             val videoInfo = BiliBiliParser(it).getVideoInfo()
-            message.reply(videoInfo.toString())
+            message.reply(videoInfo)
         }
 
         val command = message.getCommandReceiver()
