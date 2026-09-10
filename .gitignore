@@ -4,3 +4,5 @@ build/
 .kotlin/
 *.log
 .idea
+
+bilibili_cache.json
