@@ -9,6 +9,7 @@ dependencies:
   - $libs.org.jetbrains.kotlinx.kotlinx.coroutines.core
   - $libs.org.jetbrains.kotlinx.kotlinx.datetime
   - $libs.com.squareup.okhttp3.okhttp3.coroutines
+  - //tdlib
 
 settings:
   kotlin:

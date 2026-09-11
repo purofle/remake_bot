@@ -6,3 +6,5 @@ build/
 .idea
 
 bilibili_cache.json
+tdlib.log
+td.binlog

@@ -9,6 +9,8 @@ import kotlinx.coroutines.*
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
 import org.telegram.telegrambots.longpolling.util.DefaultLongPollingUpdateConsumer
 import org.telegram.telegrambots.meta.api.methods.GetMe
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage
+import org.telegram.telegrambots.meta.api.methods.send.SendVideo
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.message.Message
@@ -54,6 +56,13 @@ class RemakeBot(botToken: String): DefaultLongPollingUpdateConsumer() {
         BiliBiliParser.extractVideoIdOrNull(message.text)?.let {
             val videoInfo = BiliBiliParser(it).getVideoInfo()
             message.reply(videoInfo)
+
+            val uploadVideo = SendVideo.builder()
+                .chatId(message.chatId)
+
+            val sendMessage = SendMessage.builder()
+                .chatId(message.chatId)
+                .replyToMessageId(message.messageId)
         }
 
         val command = message.getCommandReceiver()

@@ -1,22 +1,35 @@
 package com.github.purofle.remakebot
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication
-import kotlin.system.exitProcess
 
-private val logger = KotlinLogging.logger {}
+fun main(): Unit = runBlocking {
 
-fun main() {
-    val botToken = System.getenv("BOT_TOKEN")
-    if (botToken.isNullOrEmpty()) {
-        logger.error { RuntimeException("Bot token is required") }
-        exitProcess(1)
-    }
+    val botToken = System.getenv("TELEGRAM_BOT_TOKEN") ?: error("TELEGRAM_BOT_TOKEN environment variable is not set")
+
+    val apiId = System.getenv("TELEGRAM_API_ID")?.toIntOrNull()
+        ?: error("TELEGRAM_API_ID environment variable is not set or is not a valid integer")
+
+    val apiHash = System.getenv("TELEGRAM_API_HASH")
+        ?: error("TELEGRAM_API_HASH environment variable is not set")
+
+    val td = TdLibBot(
+        botToken = botToken,
+        apiId = apiId,
+        apiHash = apiHash,
+    )
 
     runCatching {
-        TelegramBotsLongPollingApplication().also {
-            it.registerBot(botToken, RemakeBot(botToken))
-        }
+            val tdJob = launch { td.connect() }
+
+            TelegramBotsLongPollingApplication().also {
+                it.registerBot(botToken, RemakeBot(botToken))
+            }
+
+            tdJob.join()
     }.onFailure {
         it.printStackTrace()
     }
