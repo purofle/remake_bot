@@ -1,4 +1,4 @@
-package com.github.purofle.remakebot
+package com.github.purofle.remakebot.tdlib
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
@@ -99,11 +99,11 @@ class TdLibBot(
         }
     }
 
-    suspend fun <T : TdApi.Object> Client.sendAwait(query: TdApi.Function<T>): T {
+    suspend fun <T : Object> Client.sendAwait(query: TdApi.Function<T>): T {
         return suspendCancellableCoroutine { cont ->
             send(query) { obj ->
                 when (obj) {
-                    is TdApi.Error -> cont.resumeWithException(RuntimeException("TDLib error ${obj.code}: ${obj.message}"))
+                    is Error -> cont.resumeWithException(RuntimeException("TDLib error ${obj.code}: ${obj.message}"))
                     else -> {
                         @Suppress("UNCHECKED_CAST")
                         cont.resume(obj as T)

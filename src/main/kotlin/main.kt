@@ -1,9 +1,8 @@
 package com.github.purofle.remakebot
 
-import kotlinx.coroutines.Dispatchers
+import com.github.purofle.remakebot.tdlib.TdLibBot
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication
 
 fun main(): Unit = runBlocking {

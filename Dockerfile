@@ -1,23 +1,24 @@
-FROM azul/zulu-openjdk-alpine:26-jre-latest AS build
+FROM azul/zulu-openjdk-alpine:26-latest AS build
 
 WORKDIR /remake_bot
 
-COPY kotlin module.yaml libs.versions.toml ./
+COPY gradlew settings.gradle.kts build.gradle.kts gradle.properties ./
+COPY gradle ./gradle
+COPY tdlib/build.gradle.kts ./tdlib/
 
-# For cache kotlin toolchain in Github Actions
-RUN apk add --no-cache curl && \
-    KOTLIN_CLI_JAVA_HOME="$JAVA_HOME" ./kotlin --help > /dev/null
+RUN --mount=type=cache,target=/root/.gradle \
+    chmod +x gradlew && ./gradlew --no-daemon dependencies > /dev/null
 
 COPY . .
 
-RUN --mount=type=cache,target=/root/.cache/JetBrains \
-    KOTLIN_CLI_JAVA_HOME="$JAVA_HOME" ./kotlin package -v release
+RUN --mount=type=cache,target=/root/.gradle \
+    ./gradlew --no-daemon fatJar
 
 
 FROM azul/zulu-openjdk-alpine:26-jre-latest AS runner
 
 WORKDIR /app
 
-COPY --from=build /remake_bot/build/tasks/_remake_bot_executableJarJvm/remake_bot-jvm-executable.jar app.jar
+COPY --from=build /remake_bot/build/libs/remake_bot.jar app.jar
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
