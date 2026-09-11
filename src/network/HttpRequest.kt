@@ -30,7 +30,10 @@ object HttpRequest {
      * @param url the URL to request
      * @param params optional query parameters
      */
-    suspend inline fun <reified T> get(url: String, params: Map<String, Any?>? = null): T {
+    suspend inline fun <reified T> get(
+        url: String,
+        params: Map<String, Any?>? = null,
+    ): T {
 
         val httpUrl = url.toHttpUrl().newBuilder().apply {
             params?.forEach { (name, value) -> addQueryParameter(name, value.toString()) }
@@ -39,12 +42,26 @@ object HttpRequest {
         val request = Request.Builder().url(httpUrl).get().build()
 
         return client.newCall(request).executeAsync().use {
-
             if (T::class == String::class) {
                 it.body.string() as T
             } else {
                 json.decodeFromString<T>(it.body.string())
             }
+        }
+    }
+
+    suspend fun downloadFile(
+        url: String,
+        builder: Request.Builder.() -> Request.Builder = { this },
+    ): ByteArray {
+        val httpUrl = url.toHttpUrl()
+        val request = Request.Builder()
+            .builder()
+            .url(httpUrl)
+            .build()
+
+        client.newCall(request).executeAsync().use {
+            return it.body.bytes()
         }
     }
 }

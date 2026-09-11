@@ -1,10 +1,6 @@
 package com.github.purofle.remakebot.parser.bilibili
 
-import com.github.purofle.remakebot.data.bilibili.BiliBiliResponse
-import com.github.purofle.remakebot.data.bilibili.NavData
-import com.github.purofle.remakebot.data.bilibili.VideoInfo
-import com.github.purofle.remakebot.data.bilibili.WbiImg
-import com.github.purofle.remakebot.data.bilibili.WbiParams
+import com.github.purofle.remakebot.data.bilibili.*
 import com.github.purofle.remakebot.network.HttpRequest
 import com.github.purofle.remakebot.utils.toMD5
 import com.github.purofle.remakebot.utils.toQueryString
@@ -43,6 +39,10 @@ object BiliBiliAPI {
         signParams(params)
 
         return HttpRequest.get(PLAY_URL, params)
+    }
+
+    suspend fun downloadVideo(url: String) = HttpRequest.downloadFile(url) {
+        this.addHeader("Referer", "https://www.bilibili.com/")
     }
 
     suspend fun signParams(params: MutableMap<String, Any>) {
