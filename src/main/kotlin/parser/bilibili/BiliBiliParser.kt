@@ -1,7 +1,12 @@
 package com.github.purofle.remakebot.parser.bilibili
 
 import com.github.purofle.remakebot.network.HttpRequest
+import com.github.purofle.remakebot.tdlib.TdLibBot
+import com.github.purofle.remakebot.utils.executeAwait
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
+import org.telegram.telegrambots.meta.api.methods.send.SendChatAction
+import org.telegram.telegrambots.meta.api.objects.message.Message
 
 
 /**
@@ -10,11 +15,34 @@ import io.github.oshai.kotlinlogging.KotlinLogging
  */
 class BiliBiliParser(val videoId: VideoId) {
 
-    suspend fun getVideoInfo(): String {
+    data class VideoInfo(
+        val videoInfoResponse: BiliBiliAPI.VideoInfoResponse,
+        val playUrl: Durl,
+    )
+
+    suspend fun getVideoInfo(): VideoInfo {
         val videoInfo = BiliBiliAPI.getVideoInfo(videoId)
 
-        return videoInfo.toString() + BiliBiliAPI.getPlayUrl(videoId, videoInfo.data.cid)
+        return VideoInfo(
+            videoInfo,
+            BiliBiliAPI.getPlayUrl(videoId, videoInfo.data.cid).data.durl.first()
+        )
     }
+
+    suspend fun sendVideoCard(td: TdLibBot, message: Message, telegramClient: OkHttpTelegramClient) {
+        val videoInfo = getVideoInfo()
+
+        telegramClient.executeAwait(SendChatAction.builder().chatId(message.chatId).action("upload_video").build())
+        logger.info { "Downloading video: ${videoInfo.videoInfoResponse.data.title}, size: ${videoInfo.playUrl.size / 1024 / 1024} MB" }
+        val videoByteArray = HttpRequest.downloadVideo(videoInfo.playUrl.url)
+
+        td.uploadVideoWithMessage(
+            videoByteArray,
+            message.chatId,
+            videoInfo.videoInfoResponse.toString()
+        )
+    }
+
 
     companion object {
         private val VIDEO_ID_REGEX = Regex("""(?:av|AV|aV|Av)\d+|BV\w+""")

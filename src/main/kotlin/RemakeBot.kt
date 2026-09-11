@@ -1,6 +1,7 @@
 package com.github.purofle.remakebot
 
 import com.github.purofle.remakebot.parser.bilibili.BiliBiliParser
+import com.github.purofle.remakebot.tdlib.TdLibBot
 import com.github.purofle.remakebot.utils.fullName
 import com.github.purofle.remakebot.utils.getCommandReceiver
 import com.github.purofle.remakebot.utils.reply
@@ -9,15 +10,16 @@ import kotlinx.coroutines.*
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
 import org.telegram.telegrambots.longpolling.util.DefaultLongPollingUpdateConsumer
 import org.telegram.telegrambots.meta.api.methods.GetMe
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage
-import org.telegram.telegrambots.meta.api.methods.send.SendVideo
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.message.Message
 import java.lang.management.ManagementFactory
 import kotlin.time.Duration.Companion.milliseconds
 
-class RemakeBot(botToken: String): DefaultLongPollingUpdateConsumer() {
+class RemakeBot(
+    botToken: String,
+    val td: TdLibBot,
+): DefaultLongPollingUpdateConsumer() {
 
     private val telegramClient by lazy { OkHttpTelegramClient(botToken) }
 
@@ -54,15 +56,7 @@ class RemakeBot(botToken: String): DefaultLongPollingUpdateConsumer() {
     private suspend fun dispatchMessage(message: Message) {
 
         BiliBiliParser.extractVideoIdOrNull(message.text)?.let {
-            val videoInfo = BiliBiliParser(it).getVideoInfo()
-            message.reply(videoInfo)
-
-            val uploadVideo = SendVideo.builder()
-                .chatId(message.chatId)
-
-            val sendMessage = SendMessage.builder()
-                .chatId(message.chatId)
-                .replyToMessageId(message.messageId)
+            BiliBiliParser(it).sendVideoCard(td, message, telegramClient)
         }
 
         val command = message.getCommandReceiver()
