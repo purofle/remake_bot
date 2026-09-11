@@ -41,10 +41,6 @@ object BiliBiliAPI {
         return HttpRequest.get(PLAY_URL, params)
     }
 
-    suspend fun downloadVideo(url: String) = HttpRequest.downloadFile(url) {
-        this.addHeader("Referer", "https://www.bilibili.com/")
-    }
-
     suspend fun signParams(params: MutableMap<String, Any>) {
         if (!BiliBiliCache.isCacheValid()) {
             getRemoteWbiImg()

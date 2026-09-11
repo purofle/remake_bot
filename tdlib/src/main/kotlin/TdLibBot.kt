@@ -1,18 +1,18 @@
 package com.github.purofle.remakebot.tdlib
 
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.suspendCancellableCoroutine
 import org.drinkless.tdlib.Client
-import org.drinkless.tdlib.TdApi
 import org.drinkless.tdlib.TdApi.*
 import org.slf4j.LoggerFactory
+import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import org.drinkless.tdlib.TdApi.Function as TdApiFunction
 
 class TdLibBot(
     private val botToken: String,
@@ -46,15 +46,41 @@ class TdLibBot(
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
+    private val pendingSends = ConcurrentHashMap<Long, CompletableDeferred<Message>>()
 
     override fun close() {
         loopJob?.cancel()
     }
 
-    suspend fun getMessages(chatId: Long, messageIds: LongArray): Messages =
-        client.sendAwait(GetMessages(chatId, messageIds))
+    suspend fun uploadVideoWithMessage(file: ByteArray, from: Long, text: String): Message = withContext(Dispatchers.IO) {
+        val tmpFile = File.createTempFile("tdlib", ".mp4")
+        try {
+            tmpFile.writeBytes(file)
 
-    suspend fun getUser(userId: Long): User = client.sendAwait(GetUser(userId))
+            val inputFile = InputFileLocal(tmpFile.absolutePath)
+            val inputVideo = InputVideo().apply {
+                video = inputFile
+                supportsStreaming = true
+            }
+            val inputMessageVideo = InputMessageVideo().apply {
+                video = inputVideo
+                caption = FormattedText(text, null)
+            }
+            val sendMessage = SendMessage().apply {
+                chatId = from
+                inputMessageContent = inputMessageVideo
+            }
+
+            val deferred = CompletableDeferred<Message>()
+
+            val msg = client.sendAwait(sendMessage)
+            pendingSends[msg.id] = deferred
+
+            deferred.await()
+        } finally {
+            tmpFile.delete()
+        }
+    }
 
     private inner class UpdateHandler : Client.ResultHandler {
         override fun onResult(obj: Object) {
@@ -94,12 +120,21 @@ class TdLibBot(
         updates.collect {
             when (it) {
                 is UpdateAuthorizationState -> handleAuthState(it.authorizationState)
+                is UpdateNewMessage -> { }
+                is UpdateMessageSendSucceeded -> {
+                    pendingSends.remove(it.oldMessageId)?.complete(it.message)
+                }
+                is UpdateMessageSendFailed -> {
+                    pendingSends.remove(it.oldMessageId)?.completeExceptionally(
+                        RuntimeException("TDLib send failed ${it.error}")
+                    )
+                }
                 else -> logger.debug(it.toString())
             }
         }
     }
 
-    suspend fun <T : Object> Client.sendAwait(query: TdApi.Function<T>): T {
+    suspend fun <T : Object> Client.sendAwait(query: TdApiFunction<T>): T {
         return suspendCancellableCoroutine { cont ->
             send(query) { obj ->
                 when (obj) {

@@ -20,7 +20,7 @@ object HttpRequest {
     private fun setUserAgent(chain: Interceptor.Chain) = chain.request().newBuilder()
         .header(
             "User-Agent",
-            "Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Mobile Safari/537.36"
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
         )
         .build().let {
             chain.proceed(it)
@@ -50,13 +50,12 @@ object HttpRequest {
         }
     }
 
-    suspend fun downloadFile(
+    suspend fun downloadVideo(
         url: String,
-        builder: Request.Builder.() -> Request.Builder = { this },
     ): ByteArray {
         val httpUrl = url.toHttpUrl()
         val request = Request.Builder()
-            .builder()
+            .header("Referer", "https://www.bilibili.com")
             .url(httpUrl)
             .build()
 

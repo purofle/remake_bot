@@ -25,7 +25,7 @@ fun main(): Unit = runBlocking {
             val tdJob = launch { td.connect() }
 
             TelegramBotsLongPollingApplication().also {
-                it.registerBot(botToken, RemakeBot(botToken))
+                it.registerBot(botToken, RemakeBot(botToken, td))
             }
 
             tdJob.join()
