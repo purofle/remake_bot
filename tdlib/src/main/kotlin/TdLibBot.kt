@@ -78,7 +78,7 @@ class TdLibBot(
     /**
      * Uploads [videoFile] (owned by the caller, not deleted here) together with [coverBytes].
      */
-    suspend fun uploadVideoWithMessage(videoFile: File, coverBytes: ByteArray, from: Long, text: String): Message = withContext(Dispatchers.IO) {
+    suspend fun uploadVideoWithMessage(videoFile: File, coverBytes: ByteArray, from: Long, caption: FormattedText): Message = withContext(Dispatchers.IO) {
         val tmpCoverFile = File.createTempFile("tdlib", ".jpg")
         try {
             tmpCoverFile.writeBytes(coverBytes)
@@ -88,8 +88,7 @@ class TdLibBot(
                 cover = InputFileLocal(tmpCoverFile.absolutePath)
                 supportsStreaming = true
             }
-
-            sendVideo(inputVideo, from, text)
+            sendVideo(inputVideo, from, caption)
         } finally {
             tmpCoverFile.delete()
         }
@@ -100,14 +99,14 @@ class TdLibBot(
      * returned from a previous [uploadVideoWithMessage] (see [extractVideoFileIds]).
      * This skips both the download and the upload.
      */
-    suspend fun sendVideoWithFileIds(videoFileId: Int, coverFileId: Int, from: Long, text: String): Message = withContext(Dispatchers.IO) {
+    suspend fun sendVideoWithFileIds(videoFileId: Int, coverFileId: Int, from: Long, caption: FormattedText): Message = withContext(Dispatchers.IO) {
         val inputVideo = InputVideo().apply {
             video = InputFileId(videoFileId)
             cover = InputFileId(coverFileId)
             supportsStreaming = true
         }
 
-        sendVideo(inputVideo, from, text)
+        sendVideo(inputVideo, from, caption)
     }
 
     /**
@@ -124,10 +123,10 @@ class TdLibBot(
         )
     }
 
-    private suspend fun sendVideo(inputVideo: InputVideo, from: Long, text: String): Message {
+    private suspend fun sendVideo(inputVideo: InputVideo, from: Long, caption: FormattedText): Message {
         val inputMessageVideo = InputMessageVideo().apply {
             video = inputVideo
-            caption = FormattedText(text, null)
+            this.caption = caption
         }
         val sendMessage = SendMessage().apply {
             chatId = from

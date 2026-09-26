@@ -7,6 +7,11 @@ import com.github.purofle.remakebot.tdlib.TdLibBot
 import com.github.purofle.remakebot.utils.executeAwait
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CancellationException
+import org.drinkless.tdlib.TdApi.FormattedText
+import org.drinkless.tdlib.TdApi.TextEntity
+import org.drinkless.tdlib.TdApi.TextEntityType
+import org.drinkless.tdlib.TdApi.TextEntityTypeBlockQuote
+import org.drinkless.tdlib.TdApi.TextEntityTypeTextUrl
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
@@ -80,7 +85,6 @@ class BiliBiliParser(val videoId: VideoId) {
 
         /** Telegram captions are limited to 1024 characters. */
         private const val MAX_CAPTION_LENGTH = 1024
-        private const val MAX_DESCRIPTION_LENGTH = 600
 
         /**
          * Striped locks so requests for the same video are handled one at a time, without keeping a
@@ -91,13 +95,36 @@ class BiliBiliParser(val videoId: VideoId) {
         private fun lockFor(cacheKey: String) =
             videoLocks[(cacheKey.hashCode() and 0x7fffffff) % videoLocks.size]
 
-        private fun buildCaption(info: VideoInfo): String = buildString {
-            appendLine(info.title)
-            appendLine("UP: ${info.owner.name}")
-            val description = info.description.trim()
-            if (description.isNotEmpty()) appendLine(description.take(MAX_DESCRIPTION_LENGTH))
-            append("https://www.bilibili.com/video/${info.bvid}")
-        }.take(MAX_CAPTION_LENGTH)
+        /**
+         * Builds the caption out of plain text plus explicit [TextEntity]s rather than Markdown:
+         * video titles are full of `[`, `_` and `*`, which a Markdown parser would reject or eat.
+         * Entity offsets are derived as the rows are appended, so reordering rows cannot skew them.
+         */
+        private fun buildCaption(info: VideoInfo): FormattedText {
+            val owner = "@${info.owner.name}"
+            val stats = "播放量：${info.stat.view} 弹幕：${info.stat.danmaku} 评论：${info.stat.reply}"
+
+            // Telegram caps captions at 1024 characters; give the description whatever is left.
+            val budget = (MAX_CAPTION_LENGTH - info.title.length - owner.length - stats.length - 3).coerceAtLeast(0)
+            val description = info.description.trim().take(budget)
+
+            val rows = buildList {
+                add(info.title to TextEntityTypeTextUrl("https://www.bilibili.com/video/${info.bvid}"))
+                if (description.isNotEmpty()) add(description to TextEntityTypeBlockQuote())
+                add(owner to TextEntityTypeTextUrl("https://space.bilibili.com/${info.owner.mid}"))
+                add(stats to TextEntityTypeBlockQuote())
+            }
+
+            val entities = mutableListOf<TextEntity>()
+            val text = StringBuilder()
+            rows.forEachIndexed { index, (line, type) ->
+                entities += TextEntity(text.length, line.length, type)
+                text.append(line)
+                if (index != rows.lastIndex) text.append('\n')
+            }
+
+            return FormattedText(text.toString(), entities.toTypedArray())
+        }
 
         fun containsVideoId(text: String): Boolean =
             VIDEO_ID_REGEX.containsMatchIn(text)
