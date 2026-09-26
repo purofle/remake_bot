@@ -20,7 +20,9 @@ services:
     build: .
     restart: always
     environment:
-      BOT_TOKEN: ${BOT_TOKEN}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_API_ID: ${TELEGRAM_API_ID}
+      TELEGRAM_API_HASH: ${TELEGRAM_API_HASH}
       DATABASE_URL: postgresql://postgres:114514@postgres:5432/postgres?sslmode=disable
     depends_on:
       - postgres
