@@ -37,6 +37,8 @@ data class VideoInfo(
     @SerialName("ctime") val createTime: Instant,
 
     val cid: Long,
+
+    @SerialName("pic") val picture: String,
 )
 
 @Serializable
