@@ -41,7 +41,7 @@ class BiliBiliParser(val videoId: VideoId) {
             if (cached != null) {
                 logger.info { "Reusing cached video file for $cacheKey" }
                 try {
-                    td.sendVideoWithFileIds(cached.videoFileId, cached.coverFileId, message.chatId, caption)
+                    td.sendVideoWithRemoteIds(cached.videoRemoteId, cached.coverRemoteId, message.chatId, caption)
                     BiliBiliCache.reportCacheSuccess(cacheKey)
                     return
                 } catch (e: CancellationException) {
@@ -66,11 +66,11 @@ class BiliBiliParser(val videoId: VideoId) {
                 videoFile.delete()
             }
 
-            val fileIds = td.extractVideoFileIds(sentMessage)
-            if (fileIds == null) {
-                logger.debug { "No reusable file ids for $cacheKey, not caching it" }
+            val remoteIds = td.extractVideoRemoteIds(sentMessage)
+            if (remoteIds == null) {
+                logger.debug { "No reusable remote file ids for $cacheKey, not caching it" }
             } else {
-                BiliBiliCache.putVideo(cacheKey, CachedVideo(fileIds.videoFileId, fileIds.coverFileId))
+                BiliBiliCache.putVideo(cacheKey, CachedVideo(remoteIds.videoRemoteId, remoteIds.coverRemoteId))
             }
         }
     }
