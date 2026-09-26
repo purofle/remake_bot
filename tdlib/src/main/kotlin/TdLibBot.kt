@@ -19,6 +19,14 @@ import org.drinkless.tdlib.TdApi.Function as TdApiFunction
  */
 private const val MAX_COMPLETED_SENDS = 256
 
+/**
+ * Telegram file ids of an uploaded video, reusable via [TdLibBot.sendVideoWithFileIds].
+ */
+data class VideoFileIds(
+    val videoFileId: Int,
+    val coverFileId: Int,
+)
+
 class TdLibBot(
     private val botToken: String,
     apiId: Int,
@@ -85,6 +93,35 @@ class TdLibBot(
         } finally {
             tmpCoverFile.delete()
         }
+    }
+
+    /**
+     * Resend a video that was already uploaded, referencing it by the Telegram file ids
+     * returned from a previous [uploadVideoWithMessage] (see [extractVideoFileIds]).
+     * This skips both the download and the upload.
+     */
+    suspend fun sendVideoWithFileIds(videoFileId: Int, coverFileId: Int, from: Long, text: String): Message = withContext(Dispatchers.IO) {
+        val inputVideo = InputVideo().apply {
+            video = InputFileId(videoFileId)
+            cover = InputFileId(coverFileId)
+            supportsStreaming = true
+        }
+
+        sendVideo(inputVideo, from, text)
+    }
+
+    /**
+     * Extracts the reusable file ids from a successfully sent video message.
+     * Returns null if the message is not a video or has no cover.
+     */
+    fun extractVideoFileIds(message: Message): VideoFileIds? {
+        val content = message.content as? MessageVideo ?: return null
+        val coverFileId = content.cover?.sizes?.maxByOrNull { it.photo.size }?.photo?.id ?: return null
+
+        return VideoFileIds(
+            videoFileId = content.video.video.id,
+            coverFileId = coverFileId,
+        )
     }
 
     private suspend fun sendVideo(inputVideo: InputVideo, from: Long, text: String): Message {
