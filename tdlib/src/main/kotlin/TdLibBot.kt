@@ -20,11 +20,12 @@ import org.drinkless.tdlib.TdApi.Function as TdApiFunction
 private const val MAX_COMPLETED_SENDS = 256
 
 /**
- * Telegram file ids of an uploaded video, reusable via [TdLibBot.sendVideoWithFileIds].
+ * Telegram *remote* file ids of an uploaded video, reusable via [TdLibBot.sendVideoWithRemoteIds].
+ * The remote id (unlike the local `File.id`) stays usable across restarts.
  */
-data class VideoFileIds(
-    val videoFileId: Int,
-    val coverFileId: Int,
+data class VideoRemoteIds(
+    val videoRemoteId: String,
+    val coverRemoteId: String,
 )
 
 class TdLibBot(
@@ -95,14 +96,14 @@ class TdLibBot(
     }
 
     /**
-     * Resend a video that was already uploaded, referencing it by the Telegram file ids
-     * returned from a previous [uploadVideoWithMessage] (see [extractVideoFileIds]).
-     * This skips both the download and the upload.
+     * Resend a video that was already uploaded, referencing it by the remote file ids returned from
+     * a previous [uploadVideoWithMessage] (see [extractVideoRemoteIds]). This skips both the download
+     * and the upload.
      */
-    suspend fun sendVideoWithFileIds(videoFileId: Int, coverFileId: Int, from: Long, caption: FormattedText): Message = withContext(Dispatchers.IO) {
+    suspend fun sendVideoWithRemoteIds(videoRemoteId: String, coverRemoteId: String, from: Long, caption: FormattedText): Message = withContext(Dispatchers.IO) {
         val inputVideo = InputVideo().apply {
-            video = InputFileId(videoFileId)
-            cover = InputFileId(coverFileId)
+            video = InputFileRemote(videoRemoteId)
+            cover = InputFileRemote(coverRemoteId)
             supportsStreaming = true
         }
 
@@ -110,17 +111,17 @@ class TdLibBot(
     }
 
     /**
-     * Extracts the reusable file ids from a successfully sent video message.
-     * Returns null if the message is not a video or has no cover.
+     * Extracts the reusable remote file ids from a successfully sent video message. Remote ids can
+     * come back empty, in which case the message simply is not cached.
      */
-    fun extractVideoFileIds(message: Message): VideoFileIds? {
+    fun extractVideoRemoteIds(message: Message): VideoRemoteIds? {
         val content = message.content as? MessageVideo ?: return null
-        val coverFileId = content.cover?.sizes?.maxByOrNull { it.photo.size }?.photo?.id ?: return null
 
-        return VideoFileIds(
-            videoFileId = content.video.video.id,
-            coverFileId = coverFileId,
-        )
+        val videoRemoteId = content.video.video.remote?.id?.takeIf { it.isNotBlank() } ?: return null
+        val cover = content.cover?.sizes?.maxByOrNull { it.photo.size }?.photo ?: return null
+        val coverRemoteId = cover.remote?.id?.takeIf { it.isNotBlank() } ?: return null
+
+        return VideoRemoteIds(videoRemoteId, coverRemoteId)
     }
 
     private suspend fun sendVideo(inputVideo: InputVideo, from: Long, caption: FormattedText): Message {

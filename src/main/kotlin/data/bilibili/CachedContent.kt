@@ -12,10 +12,10 @@ data class CachedContent(
 )
 
 /**
- * Telegram file ids of an uploaded video, keyed by "bvid_cid".
+ * Telegram remote file ids of an uploaded video, keyed by "bvid_cid".
  */
 @Serializable
 data class CachedVideo(
-    @SerialName("video_file_id") val videoFileId: Int,
-    @SerialName("cover_file_id") val coverFileId: Int,
+    @SerialName("video_remote_id") val videoRemoteId: String,
+    @SerialName("cover_remote_id") val coverRemoteId: String,
 )
