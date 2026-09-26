@@ -14,6 +14,11 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import org.drinkless.tdlib.TdApi.Function as TdApiFunction
 
+/**
+ * Upper bound for [TdLibBot.completedSends], so a result that is never claimed cannot leak.
+ */
+private const val MAX_COMPLETED_SENDS = 256
+
 class TdLibBot(
     private val botToken: String,
     apiId: Int,
@@ -48,38 +53,71 @@ class TdLibBot(
 
     private val pendingSends = ConcurrentHashMap<Long, CompletableDeferred<Message>>()
 
+    /**
+     * Send results whose completion update arrived before [sendVideo] could register its waiter.
+     * See [sendVideo] for why this is needed and how it is drained.
+     */
+    private val completedSends = ConcurrentHashMap<Long, Result<Message>>()
+
     override fun close() {
         loopJob?.cancel()
+
+        val cause = CancellationException("TdLibBot is closed")
+        pendingSends.values.forEach { it.completeExceptionally(cause) }
+        pendingSends.clear()
     }
 
-    suspend fun uploadVideoWithMessage(file: ByteArray, from: Long, text: String): Message = withContext(Dispatchers.IO) {
-        val tmpFile = File.createTempFile("tdlib", ".mp4")
+    /**
+     * Uploads [videoFile] (owned by the caller, not deleted here) together with [coverBytes].
+     */
+    suspend fun uploadVideoWithMessage(videoFile: File, coverBytes: ByteArray, from: Long, text: String): Message = withContext(Dispatchers.IO) {
+        val tmpCoverFile = File.createTempFile("tdlib", ".jpg")
         try {
-            tmpFile.writeBytes(file)
+            tmpCoverFile.writeBytes(coverBytes)
 
-            val inputFile = InputFileLocal(tmpFile.absolutePath)
             val inputVideo = InputVideo().apply {
-                video = inputFile
+                video = InputFileLocal(videoFile.absolutePath)
+                cover = InputFileLocal(tmpCoverFile.absolutePath)
                 supportsStreaming = true
             }
-            val inputMessageVideo = InputMessageVideo().apply {
-                video = inputVideo
-                caption = FormattedText(text, null)
-            }
-            val sendMessage = SendMessage().apply {
-                chatId = from
-                inputMessageContent = inputMessageVideo
-            }
 
-            val deferred = CompletableDeferred<Message>()
-
-            val msg = client.sendAwait(sendMessage)
-            pendingSends[msg.id] = deferred
-
-            deferred.await()
+            sendVideo(inputVideo, from, text)
         } finally {
-            tmpFile.delete()
+            tmpCoverFile.delete()
         }
+    }
+
+    private suspend fun sendVideo(inputVideo: InputVideo, from: Long, text: String): Message {
+        val inputMessageVideo = InputMessageVideo().apply {
+            video = inputVideo
+            caption = FormattedText(text, null)
+        }
+        val sendMessage = SendMessage().apply {
+            chatId = from
+            inputMessageContent = inputMessageVideo
+        }
+
+        val msg = client.sendAwait(sendMessage)
+
+        // Register before draining completedSends: the completion update either finds this waiter,
+        // or arrived before it and is sitting in completedSends. Either way the await below is
+        // guaranteed to finish, with no window in between where the result could be dropped.
+        val deferred = CompletableDeferred<Message>()
+        pendingSends[msg.id] = deferred
+        completedSends.remove(msg.id)?.let { deferred.completeWith(it) }
+
+        return deferred.await()
+    }
+
+    private fun completeSend(messageId: Long, result: Result<Message>) {
+        val deferred = pendingSends.remove(messageId)
+        if (deferred != null) {
+            deferred.completeWith(result)
+            return
+        }
+
+        completedSends[messageId] = result
+        if (completedSends.size > MAX_COMPLETED_SENDS) completedSends.clear()
     }
 
     private inner class UpdateHandler : Client.ResultHandler {
@@ -121,14 +159,11 @@ class TdLibBot(
             when (it) {
                 is UpdateAuthorizationState -> handleAuthState(it.authorizationState)
                 is UpdateNewMessage -> { }
-                is UpdateMessageSendSucceeded -> {
-                    pendingSends.remove(it.oldMessageId)?.complete(it.message)
-                }
-                is UpdateMessageSendFailed -> {
-                    pendingSends.remove(it.oldMessageId)?.completeExceptionally(
-                        RuntimeException("TDLib send failed ${it.error}")
-                    )
-                }
+                is UpdateMessageSendSucceeded ->
+                    completeSend(it.oldMessageId, Result.success(it.message))
+
+                is UpdateMessageSendFailed ->
+                    completeSend(it.oldMessageId, Result.failure(RuntimeException("TDLib send failed ${it.error}")))
                 else -> logger.debug(it.toString())
             }
         }

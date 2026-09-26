@@ -1,11 +1,14 @@
 package com.github.purofle.remakebot.network
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.coroutines.executeAsync
+import java.io.File
 
 object HttpRequest {
     val client = OkHttpClient.Builder()
@@ -33,15 +36,14 @@ object HttpRequest {
     suspend inline fun <reified T> get(
         url: String,
         params: Map<String, Any?>? = null,
-    ): T {
-
+    ): T = withContext(Dispatchers.IO) {
         val httpUrl = url.toHttpUrl().newBuilder().apply {
             params?.forEach { (name, value) -> addQueryParameter(name, value.toString()) }
         }.build()
 
         val request = Request.Builder().url(httpUrl).get().build()
 
-        return client.newCall(request).executeAsync().use {
+        client.newCall(request).executeAsync().use {
             if (T::class == String::class) {
                 it.body.string() as T
             } else {
@@ -50,17 +52,33 @@ object HttpRequest {
         }
     }
 
-    suspend fun downloadVideo(
-        url: String,
-    ): ByteArray {
+    suspend fun getAsByteArray(url: String, requestBuilder: Request.Builder.() -> Request.Builder = {this}): ByteArray = withContext(Dispatchers.IO) {
         val httpUrl = url.toHttpUrl()
         val request = Request.Builder()
-            .header("Referer", "https://www.bilibili.com")
             .url(httpUrl)
+            .requestBuilder()
             .build()
 
         client.newCall(request).executeAsync().use {
-            return it.body.bytes()
+            return@use it.body.bytes()
+        }
+    }
+
+    /**
+     * Streams the response body into [target]
+     */
+    suspend fun downloadVideo(url: String, target: File): Unit = withContext(Dispatchers.IO) {
+        val request = Request.Builder()
+            .url(url.toHttpUrl())
+            .header("Referer", "https://www.bilibili.com")
+            .build()
+
+        client.newCall(request).executeAsync().use { response ->
+            response.body.byteStream().use { input ->
+                target.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
         }
     }
 }
