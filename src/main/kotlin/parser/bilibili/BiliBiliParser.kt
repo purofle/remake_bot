@@ -7,13 +7,9 @@ import com.github.purofle.remakebot.tdlib.TdLibBot
 import com.github.purofle.remakebot.utils.executeAwait
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CancellationException
-import org.drinkless.tdlib.TdApi.FormattedText
-import org.drinkless.tdlib.TdApi.TextEntity
-import org.drinkless.tdlib.TdApi.TextEntityType
-import org.drinkless.tdlib.TdApi.TextEntityTypeBlockQuote
-import org.drinkless.tdlib.TdApi.TextEntityTypeTextUrl
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.drinkless.tdlib.TdApi.*
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
 import org.telegram.telegrambots.meta.api.methods.send.SendChatAction
 import org.telegram.telegrambots.meta.api.objects.message.Message
@@ -110,7 +106,7 @@ class BiliBiliParser(val videoId: VideoId) {
 
             val rows = buildList {
                 add(info.title to TextEntityTypeTextUrl("https://www.bilibili.com/video/${info.bvid}"))
-                if (description.isNotEmpty()) add(description to TextEntityTypeBlockQuote())
+                if (description.isNotEmpty()) add(description to TextEntityTypeExpandableBlockQuote())
                 add(owner to TextEntityTypeTextUrl("https://space.bilibili.com/${info.owner.mid}"))
                 add(stats to TextEntityTypeBlockQuote())
             }
