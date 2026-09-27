@@ -32,7 +32,7 @@ object BiliBiliAPI {
     suspend fun getPlayUrl(videoId: VideoId, cid: Long): VideoUrlResponse {
         val params: MutableMap<String, Any> = mutableMapOf("cid" to cid)
         when (videoId) {
-            is VideoId.Aid -> params["aid"] = videoId.value
+            is VideoId.Aid -> params["avid"] = videoId.value
             is VideoId.Bvid -> params["bvid"] = videoId.value
         }
 
