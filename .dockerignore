@@ -7,3 +7,5 @@ build/
 .dockerignore
 Dockerfile
 compose.yml
+bilibili_cache.json
+video_cache.json

@@ -7,5 +7,6 @@ build/
 .idea
 
 bilibili_cache.json
+video_cache.json
 tdlib.log
 td.binlog
