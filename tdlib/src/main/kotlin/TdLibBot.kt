@@ -79,7 +79,13 @@ class TdLibBot(
     /**
      * Uploads [videoFile] (owned by the caller, not deleted here) together with [coverBytes].
      */
-    suspend fun uploadVideoWithMessage(videoFile: File, coverBytes: ByteArray, from: Long, caption: FormattedText): Message = withContext(Dispatchers.IO) {
+    suspend fun uploadVideoWithMessage(
+        videoFile: File,
+        coverBytes: ByteArray,
+        from: Long,
+        caption: FormattedText,
+        videoDuration: Int
+    ): Message = withContext(Dispatchers.IO) {
         val tmpCoverFile = File.createTempFile("tdlib", ".jpg")
         try {
             tmpCoverFile.writeBytes(coverBytes)
@@ -87,6 +93,7 @@ class TdLibBot(
             val inputVideo = InputVideo().apply {
                 video = InputFileLocal(videoFile.absolutePath)
                 cover = InputFileLocal(tmpCoverFile.absolutePath)
+                duration = videoDuration
                 supportsStreaming = true
             }
             sendVideo(inputVideo, from, caption)
@@ -100,10 +107,17 @@ class TdLibBot(
      * a previous [uploadVideoWithMessage] (see [extractVideoRemoteIds]). This skips both the download
      * and the upload.
      */
-    suspend fun sendVideoWithRemoteIds(videoRemoteId: String, coverRemoteId: String, from: Long, caption: FormattedText): Message = withContext(Dispatchers.IO) {
+    suspend fun sendVideoWithRemoteIds(
+        videoRemoteId: String,
+        coverRemoteId: String,
+        from: Long,
+        caption: FormattedText,
+        videoDuration: Int
+    ): Message = withContext(Dispatchers.IO) {
         val inputVideo = InputVideo().apply {
             video = InputFileRemote(videoRemoteId)
             cover = InputFileRemote(coverRemoteId)
+            duration = videoDuration
             supportsStreaming = true
         }
 

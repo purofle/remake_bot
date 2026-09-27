@@ -39,7 +39,10 @@ data class VideoInfo(
     val cid: Long,
 
     @SerialName("pic") val picture: String,
-)
+
+    val duration: Int,
+) {
+}
 
 @Serializable
 data class VideoStat(

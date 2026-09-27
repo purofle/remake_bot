@@ -1,6 +1,9 @@
 package com.github.purofle.remakebot
 
+import com.github.purofle.remakebot.parser.TextMediaParser
 import com.github.purofle.remakebot.parser.bilibili.BiliBiliParser
+import com.github.purofle.remakebot.parser.xhs.XhsParser
+import com.github.purofle.remakebot.sender.MediaSender
 import com.github.purofle.remakebot.tdlib.TdLibBot
 import com.github.purofle.remakebot.utils.fullName
 import com.github.purofle.remakebot.utils.getCommandReceiver
@@ -19,9 +22,12 @@ import kotlin.time.Duration.Companion.milliseconds
 class RemakeBot(
     botToken: String,
     val td: TdLibBot,
+    private val xhsCookie: String?,
 ): DefaultLongPollingUpdateConsumer() {
 
     private val telegramClient by lazy { OkHttpTelegramClient(botToken) }
+
+    private val mediaSender by lazy { MediaSender(td, telegramClient) }
 
     private val scope = CoroutineScope(
         SupervisorJob() + Dispatchers.IO +
@@ -55,8 +61,15 @@ class RemakeBot(
     context(_: OkHttpTelegramClient)
     private suspend fun dispatchMessage(message: Message) {
 
-        BiliBiliParser.extractVideoIdOrNull(message.text)?.let {
-            BiliBiliParser(it).sendVideoCard(td, message, telegramClient)
+        val parsers: List<TextMediaParser> = listOf(
+            BiliBiliParser(message.text),
+            XhsParser(message.text, xhsCookie),
+        )
+
+        parsers.filter { it.supports() }.forEach { parser ->
+            runParser(telegramClient, message) {
+                mediaSender.send(parser, message)
+            }
         }
 
         val command = message.getCommandReceiver()
@@ -86,6 +99,27 @@ class RemakeBot(
                 """.trimIndent())
             }
             else -> {}
+        }
+    }
+
+    /**
+     * Runs a parser and reports failures back into the chat. Without this the only trace of a failure
+     * is the scope's CoroutineExceptionHandler, which the user never sees.
+     */
+    private suspend fun runParser(
+        telegramClient: OkHttpTelegramClient,
+        message: Message,
+        block: suspend () -> Unit,
+    ) {
+        try {
+            block()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logger.error (e) { "Parser failed for message ${message.text}" }
+            with(telegramClient) {
+                message.reply(e.message ?: "解析失败")
+            }
         }
     }
 }

@@ -1,0 +1,133 @@
+package com.github.purofle.remakebot.parser.xhs
+
+import com.github.purofle.remakebot.data.xhs.XhsNote
+import com.github.purofle.remakebot.data.xhs.XhsStreamEntry
+import com.github.purofle.remakebot.network.HttpRequest
+import com.github.purofle.remakebot.parser.Author
+import com.github.purofle.remakebot.parser.MediaPlatform
+import com.github.purofle.remakebot.parser.MediaResource
+import com.github.purofle.remakebot.parser.TextMediaParser
+import com.github.purofle.remakebot.text.formattedText
+import com.github.purofle.remakebot.utils.MAX_CAPTION_LENGTH
+import io.github.oshai.kotlinlogging.KotlinLogging
+import org.drinkless.tdlib.TdApi.FormattedText
+import java.io.File
+
+private const val NOTE_TYPE_VIDEO = "video"
+
+/** Media requests need this or the CDN refuses them. */
+private const val XHS_REFERER = "https://www.xiaohongshu.com/"
+
+/**
+ * Parse a Xiaohongshu video note.
+ *
+ * Every expected failure (login wall, not a video, no stream) is thrown with a message that is safe
+ * to show in chat; the caller reports it back to the user.
+ *
+ * @param text the message text, holding a note URL or an `xhslink.com` share link. The URL has to be
+ *   requested exactly as it appeared, with its query string, which carries a time limited
+ *   `xsec_token`.
+ * @param cookie the `XHS_COOKIE` value, if the bot has one. Most notes are behind a login wall.
+ */
+class XhsParser(override val text: String, val cookie: String?) : TextMediaParser {
+
+    /**
+     * The first note URL in [text], either a full one or an `xhslink.com` share link. Trailing
+     * punctuation is excluded by only accepting URL safe characters in the query string.
+     */
+    override fun extractUrlOrNull(): String? =
+        (NOTE_URL_REGEX.find(text) ?: SHORT_URL_REGEX.find(text))?.value
+
+    override fun supports(): Boolean = extractUrlOrNull() != null
+
+    override suspend fun parse(): MediaResource {
+        val noteUrl = extractUrlOrNull() ?: error("Invalid xiaohongshu URL: $text")
+        val fetched = XhsAPI.fetchNote(noteUrl, cookie)
+        val note = fetched.note
+
+        if (note.type != NOTE_TYPE_VIDEO) {
+            logger.info { "Note ${fetched.noteId} is type '${note.type}', only video notes are supported" }
+            error("该小红书笔记不是视频（type=${note.type}），暂不支持")
+        }
+
+        val stream = selectStream(note) ?: error("未获取到视频流")
+        val coverUrl = note.imageList.firstOrNull()?.urlDefault?.takeIf { it.isNotBlank() }
+            ?: error("未获取到视频封面")
+
+        val user = note.user?.takeIf { it.userId.isNotBlank() && it.nickname.isNotBlank() }
+        val author = user?.let { Author(it.nickname, "https://www.xiaohongshu.com/user/profile/${it.userId}") }
+
+        return MediaResource.Video(
+            // The note id rather than the URL: a share link's own query string carries a rotating
+            // xsec_token, so URL keyed entries would never be reused.
+            id = fetched.noteId,
+            title = note.title,
+            author = author,
+            platform = MediaPlatform.RedNote,
+            url = noteUrl,
+            caption = buildCaption(note, author, noteUrl),
+            videoUrl = stream.masterUrl,
+            // The photo host needs no Referer (verified), so the sender can fetch it as is.
+            coverUrl = rawImageUrl(coverUrl),
+            duration = 0,
+        )
+    }
+
+    /** The video CDN is a different host than the photo one, so keep a Referer in case it is hotlink protected. */
+    override suspend fun downloadVideo(video: MediaResource.Video, target: File) =
+        HttpRequest.download(video.videoUrl, target) { header("Referer", XHS_REFERER) }
+
+    private fun buildCaption(note: XhsNote, author: Author?, noteUrl: String): FormattedText {
+        val description = note.desc.trim()
+
+        return formattedText(MAX_CAPTION_LENGTH) {
+            line { url(note.title, noteUrl) }
+            if (author != null) line { url("@${author.name}", author.url) }
+            if (description.isNotEmpty()) line { shrinkable { expandableBlockQuote(description) } }
+        }
+    }
+
+    companion object {
+        private val logger = KotlinLogging.logger("XhsParser")
+
+        private val NOTE_URL_REGEX = Regex(
+            """https?://(?:www\.)?xiaohongshu\.com/(?:explore|discovery/item)/[0-9a-zA-Z]+(?:\?[\w=&%.~-]*)?"""
+        )
+
+        private val SHORT_URL_REGEX = Regex(
+            """https?://(?:www\.)?xhslink\.com/[\w/?=&%.~-]+"""
+        )
+
+        private val IMAGE_TRACE_REGEX = Regex("""/[a-f0-9]{32}/(.*)/([^/!]+)(?:!.*)?""")
+
+        private val IMAGE_FILE_REGEX = Regex("""/([^/!]+)(?:!.*)?$""")
+
+        /**
+         * The photo urls use this host, which serves the same OSS object without a signature, cookie
+         * or Referer.
+         */
+        private const val RAW_IMAGE_HOST = "https://sns-img-hw.xhscdn.com"
+
+        /** h264 first, then the newer codecs, taking the first entry that actually has a URL. */
+        private fun selectStream(note: XhsNote): XhsStreamEntry? {
+            val stream = note.video?.media?.stream ?: return null
+
+            return listOf(stream.h264, stream.av1, stream.h265, stream.h266)
+                .firstNotNullOfOrNull { entries -> entries.firstOrNull { it.masterUrl.isNotBlank() } }
+        }
+
+        /**
+         * A cover url the CDN will actually serve. `imageList[0].urlDefault` points at
+         * `sns-webpic-qc.xhscdn.com` with a signed path that answers 403 unless the request carries
+         * the page's session, which we deliberately do not forward to a CDN. The same OSS object is
+         * public on the photo host, addressed by its trace id.
+         */
+        private fun rawImageUrl(url: String): String = "$RAW_IMAGE_HOST/${imageTraceId(url)}"
+
+        private fun imageTraceId(url: String): String {
+            val match = IMAGE_TRACE_REGEX.find(url) ?: IMAGE_FILE_REGEX.find(url) ?: return url
+
+            return match.groupValues.drop(1).joinToString("/")
+        }
+    }
+}

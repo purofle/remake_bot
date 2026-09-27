@@ -15,6 +15,9 @@ fun main(): Unit = runBlocking {
     val apiHash = System.getenv("TELEGRAM_API_HASH")
         ?: error("TELEGRAM_API_HASH environment variable is not set")
 
+    // Optional: most xhs notes sit behind a login wall, so without it those links just fail.
+    val xhsCookie = System.getenv("XHS_COOKIE")
+
     val td = TdLibBot(
         botToken = botToken,
         apiId = apiId,
@@ -25,7 +28,7 @@ fun main(): Unit = runBlocking {
             val tdJob = launch { td.connect() }
 
             TelegramBotsLongPollingApplication().also {
-                it.registerBot(botToken, RemakeBot(botToken, td))
+                it.registerBot(botToken, RemakeBot(botToken, td, xhsCookie))
             }
 
             tdJob.join()
