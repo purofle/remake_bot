@@ -83,6 +83,7 @@ class TdLibBot(
         videoFile: File,
         coverBytes: ByteArray,
         from: Long,
+        fromMessage: Int,
         caption: FormattedText,
         videoDuration: Int
     ): Message = withContext(Dispatchers.IO) {
@@ -96,7 +97,7 @@ class TdLibBot(
                 duration = videoDuration
                 supportsStreaming = true
             }
-            sendVideo(inputVideo, from, caption)
+            sendVideo(inputVideo, from, fromMessage, caption)
         } finally {
             tmpCoverFile.delete()
         }
@@ -111,6 +112,7 @@ class TdLibBot(
         videoRemoteId: String,
         coverRemoteId: String,
         from: Long,
+        fromMessage: Int,
         caption: FormattedText,
         videoDuration: Int
     ): Message = withContext(Dispatchers.IO) {
@@ -121,7 +123,7 @@ class TdLibBot(
             supportsStreaming = true
         }
 
-        sendVideo(inputVideo, from, caption)
+        sendVideo(inputVideo, from, fromMessage, caption)
     }
 
     /**
@@ -138,13 +140,17 @@ class TdLibBot(
         return VideoRemoteIds(videoRemoteId, coverRemoteId)
     }
 
-    private suspend fun sendVideo(inputVideo: InputVideo, from: Long, caption: FormattedText): Message {
+    private suspend fun sendVideo(inputVideo: InputVideo, from: Long, fromMessage: Int, caption: FormattedText): Message {
         val inputMessageVideo = InputMessageVideo().apply {
             video = inputVideo
             this.caption = caption
         }
         val sendMessage = SendMessage().apply {
             chatId = from
+            replyTo = InputMessageReplyToMessage().apply {
+                // fromMessage is a Bot API message id; TDLib ids of server messages are shifted by 20 bits.
+                messageId = fromMessage.toLong() shl 20
+            }
             inputMessageContent = inputMessageVideo
         }
 
