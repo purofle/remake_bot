@@ -5,6 +5,7 @@ import com.github.purofle.remakebot.data.xhs.XhsNote
 import com.github.purofle.remakebot.data.xhs.XhsNoteState
 import com.github.purofle.remakebot.network.HttpRequest
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.Json
 import java.net.URI
 
@@ -26,6 +27,14 @@ object XhsAPI {
 
     private val logger = KotlinLogging.logger("XhsAPI")
 
+    /**
+     * Xiaohongshu shows a phone browser the whole note without a login, while a desktop one is sent
+     * to the login page.
+     */
+    private const val MOBILE_USER_AGENT =
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) " +
+            "Version/17.0 Mobile/15E148 Safari/604.1"
+
     private const val BROWSER_ACCEPT =
         "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
 
@@ -36,7 +45,7 @@ object XhsAPI {
     private val JSON_ESCAPE_REGEX = Regex("""\\(?=[;=,%{}"])""")
 
     /** Hosts (and their subdomains) that may receive `XHS_COOKIE`. */
-    private val COOKIE_HOSTS = listOf("xiaohongshu.com", "xhslink.com")
+    private val COOKIE_HOSTS = listOf("xiaohongshu.com", "xhslink.com", "xhslink.cn")
 
     /** Cookie names only, so a diagnostic can never echo a value. */
     private val COOKIE_NAME_REGEX = Regex("""[A-Za-z0-9_-]+""")
@@ -56,8 +65,13 @@ object XhsAPI {
      *
      * [url] has to be requested as given: note URLs carry a time limited `xsec_token`, and dropping
      * the query would land on an empty or blocked page.
+     *
+     * The mobile page is tried first since it needs no cookie; the desktop page, sent with [cookie],
+     * is the fallback.
      */
     suspend fun fetchNote(url: String, cookie: String?): XhsNoteResult {
+        fetchMobileNote(url)?.let { return it }
+
         val session = normalizeCookie(cookie)
 
         // A cookie that cannot be parsed would be sent as one garbage cookie and the answer would be
@@ -120,6 +134,30 @@ object XhsAPI {
         }
     }
 
+    /** The note from the mobile page, or null when that page does not carry one. */
+    private suspend fun fetchMobileNote(url: String): XhsNoteResult? {
+        val html = try {
+            fetchHtml(url, session = null, userAgent = MOBILE_USER_AGENT)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logger.warn(e) { "Mobile note page failed, falling back to the desktop one" }
+            return null
+        }
+
+        val note = extractInitialState(html)
+            ?.let { runCatching { json.decodeFromString<XhsInitialState>(it) }.getOrNull() }
+            ?.noteData?.data?.noteData
+            ?.takeIf { it.noteId.isNotBlank() }
+
+        if (note == null) {
+            logger.info { "Mobile note page has no note data (${html.length}B), falling back to the desktop one" }
+            return null
+        }
+
+        return XhsNoteResult(note.noteId, note)
+    }
+
     private fun cookieState(session: String?): String =
         if (session.isNullOrBlank()) "未配置 XHS_COOKIE" else "XHS_COOKIE 可能不是登录态（缺少 web_session）"
 
@@ -174,9 +212,10 @@ object XhsAPI {
         return COOKIE_HOSTS.any { host == it || host.endsWith(".$it") }
     }
 
-    private suspend fun fetchHtml(url: String, session: String?): String =
+    private suspend fun fetchHtml(url: String, session: String?, userAgent: String? = null): String =
         HttpRequest.get<String>(url) {
             if (!session.isNullOrBlank()) header("Cookie", session)
+            if (userAgent != null) header("User-Agent", userAgent)
             header("Accept", BROWSER_ACCEPT)
         }
 

@@ -20,23 +20,24 @@ object HttpRequest {
         ignoreUnknownKeys = true
     }
 
-    private fun setUserAgent(chain: Interceptor.Chain) = chain.request().newBuilder()
-        .header(
+    /** A default only: a request that sets its own `User-Agent` keeps it. */
+    private fun setUserAgent(chain: Interceptor.Chain) = chain.request().takeIf { it.header("User-Agent") == null }
+        ?.newBuilder()
+        ?.header(
             "User-Agent",
             // Keep the major version one that sites actually recognise: Xiaohongshu answers an
             // "unsupported browser" shell (with an `__INITIAL_STATE__` that has no note in it) for a
             // version newer than anything it knows.
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
         )
-        .build().let {
-            chain.proceed(it)
-        }
+        ?.build()
+        .let { chain.proceed(it ?: chain.request()) }
 
     /**
      * @param url the URL to request
      * @param params optional query parameters
-     * @param requestBuilder extra request customization, e.g. a Cookie header. Setting `User-Agent`
-     *   here has no effect, the interceptor overwrites it.
+     * @param requestBuilder extra request customization, e.g. a Cookie header or a `User-Agent` other
+     *   than the default one.
      */
     suspend inline fun <reified T> get(
         url: String,

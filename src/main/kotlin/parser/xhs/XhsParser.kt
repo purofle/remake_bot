@@ -24,7 +24,8 @@ private const val XHS_REFERER = "https://www.xiaohongshu.com/"
  * Every expected failure (login wall, not a video, no stream) is thrown with a message that is safe
  * to show in chat; the caller reports it back to the user.
  *
- * @param text the message text, holding a note URL or an `xhslink.com` share link. The URL has to be
+ * @param text the message text, holding a note URL or an `xhslink.com`/`xhslink.cn` share link,
+ *   possibly among the rest of an app share text. The URL has to be
  *   requested exactly as it appeared, with its query string, which carries a time limited
  *   `xsec_token`.
  * @param cookie the `XHS_COOKIE` value, if the bot has one. Most notes are behind a login wall.
@@ -32,7 +33,7 @@ private const val XHS_REFERER = "https://www.xiaohongshu.com/"
 class XhsParser(override val text: String, val cookie: String?) : TextMediaParser {
 
     /**
-     * The first note URL in [text], either a full one or an `xhslink.com` share link. Trailing
+     * The first note URL in [text], either a full one or an `xhslink` share link. Trailing
      * punctuation is excluded by only accepting URL safe characters in the query string.
      */
     override fun extractUrlOrNull(): String? =
@@ -50,8 +51,9 @@ class XhsParser(override val text: String, val cookie: String?) : TextMediaParse
             error("该小红书笔记不是视频（type=${note.type}），暂不支持")
         }
 
-        val stream = selectStream(note) ?: error("未获取到视频流")
-        val coverUrl = note.imageList.firstOrNull()?.urlDefault?.takeIf { it.isNotBlank() }
+        val stream = selectStream(note)
+        val videoUrl = originVideoUrl(note) ?: stream?.masterUrl ?: error("未获取到视频流")
+        val coverUrl = note.imageList.firstOrNull()?.let { it.urlDefault.ifBlank { it.url } }?.takeIf { it.isNotBlank() }
             ?: error("未获取到视频封面")
 
         val user = note.user?.takeIf { it.userId.isNotBlank() && it.nickname.isNotBlank() }
@@ -66,10 +68,10 @@ class XhsParser(override val text: String, val cookie: String?) : TextMediaParse
             platform = MediaPlatform.RedNote,
             url = noteUrl,
             caption = buildCaption(note, author, noteUrl),
-            videoUrl = stream.masterUrl,
+            videoUrl = videoUrl,
             // The photo host needs no Referer (verified), so the sender can fetch it as is.
             coverUrl = rawImageUrl(coverUrl),
-            duration = 0,
+            duration = note.video?.capa?.duration?.takeIf { it > 0 } ?: ((stream?.duration ?: 0) / 1000).toInt(),
         )
     }
 
@@ -95,7 +97,7 @@ class XhsParser(override val text: String, val cookie: String?) : TextMediaParse
         )
 
         private val SHORT_URL_REGEX = Regex(
-            """https?://(?:www\.)?xhslink\.com/[\w/?=&%.~-]+"""
+            """https?://(?:www\.)?xhslink\.(?:com|cn)/[\w/?=&%.~-]+"""
         )
 
         private val IMAGE_TRACE_REGEX = Regex("""/[a-f0-9]{32}/(.*)/([^/!]+)(?:!.*)?""")
@@ -107,6 +109,15 @@ class XhsParser(override val text: String, val cookie: String?) : TextMediaParse
          * or Referer.
          */
         private const val RAW_IMAGE_HOST = "https://sns-img-hw.xhscdn.com"
+
+        /**
+         * Serves the originally uploaded file by its key, without a signature, cookie or Referer.
+         * It is the best quality there is, so it is preferred over the transcoded streams.
+         */
+        private const val ORIGIN_VIDEO_HOST = "https://sns-video-bd.xhscdn.com"
+
+        private fun originVideoUrl(note: XhsNote): String? =
+            note.video?.consumer?.originVideoKey?.takeIf { it.isNotBlank() }?.let { "$ORIGIN_VIDEO_HOST/$it" }
 
         /** h264 first, then the newer codecs, taking the first entry that actually has a URL. */
         private fun selectStream(note: XhsNote): XhsStreamEntry? {
