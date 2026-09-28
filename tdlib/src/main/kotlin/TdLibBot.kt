@@ -1,10 +1,7 @@
 package com.github.purofle.remakebot.tdlib
 
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.channels.Channel
 import org.drinkless.tdlib.Client
 import org.drinkless.tdlib.TdApi.*
 import org.slf4j.LoggerFactory
@@ -34,12 +31,11 @@ class TdLibBot(
     apiHash: String,
 ): AutoCloseable {
 
-    private val _updates = MutableSharedFlow<Object>(
-        replay = 0,
-        extraBufferCapacity = 256,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST
-    )
-    val updates: SharedFlow<Object> = _updates.asSharedFlow()
+    /**
+     * Unbounded and lossless: updates arriving before [connect] starts consuming (such as the first
+     * authorization state) are kept, and send completions can never be dropped under load.
+     */
+    private val updates = Channel<Object>(Channel.UNLIMITED)
 
     private val tdlibParameters = SetTdlibParameters().apply {
         this.apiHash = apiHash
@@ -67,6 +63,9 @@ class TdLibBot(
      * See [sendVideo] for why this is needed and how it is drained.
      */
     private val completedSends = ConcurrentHashMap<Long, Result<Message>>()
+
+    /** Makes registering a waiter in [sendVideo] and [completeSend] atomic with respect to each other. */
+    private val sendLock = Any()
 
     override fun close() {
         loopJob?.cancel()
@@ -154,19 +153,21 @@ class TdLibBot(
             inputMessageContent = inputMessageVideo
         }
 
+        loggedGate.await()
         val msg = client.sendAwait(sendMessage)
 
-        // Register before draining completedSends: the completion update either finds this waiter,
-        // or arrived before it and is sitting in completedSends. Either way the await below is
-        // guaranteed to finish, with no window in between where the result could be dropped.
+        // Under sendLock the completion update either finds this waiter, or already sits in
+        // completedSends and is drained here. Either way the await below is guaranteed to finish.
         val deferred = CompletableDeferred<Message>()
-        pendingSends[msg.id] = deferred
-        completedSends.remove(msg.id)?.let { deferred.completeWith(it) }
+        synchronized(sendLock) {
+            pendingSends[msg.id] = deferred
+            completedSends.remove(msg.id)?.let { deferred.completeWith(it) }
+        }
 
         return deferred.await()
     }
 
-    private fun completeSend(messageId: Long, result: Result<Message>) {
+    private fun completeSend(messageId: Long, result: Result<Message>) = synchronized(sendLock) {
         val deferred = pendingSends.remove(messageId)
         if (deferred != null) {
             deferred.completeWith(result)
@@ -179,7 +180,7 @@ class TdLibBot(
 
     private inner class UpdateHandler : Client.ResultHandler {
         override fun onResult(obj: Object) {
-            _updates.tryEmit(obj)
+            updates.trySend(obj)
         }
     }
 
@@ -212,7 +213,7 @@ class TdLibBot(
 
             client = Client.create(UpdateHandler(), null, null)
         }
-        updates.collect {
+        for (it in updates) {
             when (it) {
                 is UpdateAuthorizationState -> handleAuthState(it.authorizationState)
                 is UpdateNewMessage -> { }
