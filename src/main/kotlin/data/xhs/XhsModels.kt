@@ -71,6 +71,8 @@ data class XhsImage(
     @SerialName("urlPre") val urlPre: String = "",
     /** What the mobile page has instead of [urlDefault]. */
     val url: String = "",
+    /** The path of the original on the photo host, only on the mobile page. */
+    @SerialName("fileId") val fileId: String = "",
 )
 
 @Serializable

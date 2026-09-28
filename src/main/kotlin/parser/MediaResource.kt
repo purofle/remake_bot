@@ -48,4 +48,17 @@ sealed interface MediaResource {
         val coverUrl: String,
         val duration: Int,
     ): MediaResource
+
+    /**
+     * @param photoUrls direct links to the photos, in the order they are shown.
+     */
+    data class Photos(
+        override val id: String,
+        override val title: String,
+        override val author: Author?,
+        override val platform: MediaPlatform,
+        override val url: String,
+        override val caption: FormattedText,
+        val photoUrls: List<String>,
+    ): MediaResource
 }
