@@ -43,7 +43,7 @@ class MediaSender(
             if (cached != null) {
                 logger.info { "Reusing cached video file for $cacheKey" }
                 try {
-                    td.sendVideoWithRemoteIds(cached.videoRemoteId, cached.coverRemoteId, message.chatId, caption, cached.duration)
+                    td.sendVideoWithRemoteIds(cached.videoRemoteId, cached.coverRemoteId, message.chatId, message.messageId, caption, cached.duration)
                     VideoFileIdCache.reportCacheSuccess(cacheKey)
                     return
                 } catch (e: CancellationException) {
@@ -62,7 +62,7 @@ class MediaSender(
             val videoFile = File.createTempFile(video.platform.name.lowercase(), ".mp4")
             val sentMessage = try {
                 parser.downloadVideo(video, videoFile)
-                td.uploadVideoWithMessage(videoFile, cover, message.chatId, caption, video.duration)
+                td.uploadVideoWithMessage(videoFile, cover, message.chatId, message.messageId, caption, video.duration)
             } finally {
                 videoFile.delete()
             }
