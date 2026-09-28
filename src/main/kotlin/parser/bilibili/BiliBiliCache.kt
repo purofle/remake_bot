@@ -36,7 +36,7 @@ object BiliBiliCache {
 
     fun isCacheValid(): Boolean = content?.let {
         val zone = TimeZone.currentSystemDefault()
-        return it.createdAt.toLocalDateTime(zone) == Clock.System.now().toLocalDateTime(zone).date
+        it.createdAt.toLocalDateTime(zone).date == Clock.System.now().toLocalDateTime(zone).date
     } ?: false
 
     suspend fun updateCache(wbiImg: WbiImg) {
