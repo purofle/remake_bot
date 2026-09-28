@@ -6,6 +6,7 @@ import com.github.purofle.remakebot.data.xhs.XhsNoteState
 import com.github.purofle.remakebot.network.HttpRequest
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.Json
+import java.net.URI
 
 /**
  * A fetched note together with the id it is registered under. The id is what callers should key a
@@ -33,6 +34,9 @@ object XhsAPI {
 
     /** A backslash escaping one of the characters a cookie delimiter or value can contain. */
     private val JSON_ESCAPE_REGEX = Regex("""\\(?=[;=,%{}"])""")
+
+    /** Hosts (and their subdomains) that may receive `XHS_COOKIE`. */
+    private val COOKIE_HOSTS = listOf("xiaohongshu.com", "xhslink.com")
 
     /** Cookie names only, so a diagnostic can never echo a value. */
     private val COOKIE_NAME_REGEX = Regex("""[A-Za-z0-9_-]+""")
@@ -69,7 +73,8 @@ object XhsAPI {
         if (!html.contains(STATE_MARKER)) {
             extractRedirectUrl(html)?.let { redirected ->
                 logger.debug { "Following a self redirect to $redirected" }
-                html = fetchHtml(redirected, session)
+                // The target comes from page content, so only hand the login cookie to Xiaohongshu itself.
+                html = fetchHtml(redirected, session.takeIf { isCookieHost(redirected) })
             }
         }
 
@@ -162,6 +167,11 @@ object XhsAPI {
         if (!name.matches(COOKIE_NAME_REGEX)) return null
 
         return name to substringAfter('=').trim()
+    }
+
+    private fun isCookieHost(url: String): Boolean {
+        val host = runCatching { URI(url).host }.getOrNull()?.lowercase() ?: return false
+        return COOKIE_HOSTS.any { host == it || host.endsWith(".$it") }
     }
 
     private suspend fun fetchHtml(url: String, session: String?): String =
