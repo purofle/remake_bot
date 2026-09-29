@@ -138,10 +138,13 @@ class XhsParser(override val text: String, val cookie: String?) : TextMediaParse
         private const val RAW_IMAGE_HOST = "https://sns-img-hw.xhscdn.com"
 
         /**
-         * Has the photo host re-encode the original as JPEG at full size, since an original can be a
-         * format (e.g. HEIC) Telegram does not take as a photo.
+         * Has the photo host re-encode the original as JPEG, since an original can be a format
+         * (e.g. HEIC) Telegram does not take as a photo, and scale it down to fit a
+         * [MAX_PHOTO_SIDE] box (never up). Telegram rejects a photo whose width and height add up to
+         * more than 10000 with `PHOTO_INVALID_DIMENSIONS`, which a 4416x5888 phone photo already does.
          */
-        private const val JPEG_QUERY = "?imageView2/2/w/0/format/jpg"
+        private const val MAX_PHOTO_SIDE = 4096
+        private const val JPEG_QUERY = "?imageView2/2/w/$MAX_PHOTO_SIDE/h/$MAX_PHOTO_SIDE/format/jpg"
 
         private fun photoUrl(image: XhsImage): String? {
             if (image.fileId.isNotBlank()) return "$RAW_IMAGE_HOST/${image.fileId}$JPEG_QUERY"
