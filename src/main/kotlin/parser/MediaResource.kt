@@ -5,6 +5,7 @@ import org.drinkless.tdlib.TdApi.FormattedText
 enum class MediaPlatform {
     BiliBili,
     RedNote,
+    Douyin,
 }
 
 data class Author(

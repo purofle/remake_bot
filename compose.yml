@@ -24,6 +24,7 @@ services:
       TELEGRAM_API_ID: ${TELEGRAM_API_ID}
       TELEGRAM_API_HASH: ${TELEGRAM_API_HASH}
       XHS_COOKIE: ${XHS_COOKIE}
+      DOUYIN_COOKIE: ${DOUYIN_COOKIE:-}
       DATABASE_URL: postgresql://postgres:114514@postgres:5432/postgres?sslmode=disable
     depends_on:
       - postgres
