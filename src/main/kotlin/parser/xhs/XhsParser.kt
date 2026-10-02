@@ -2,6 +2,7 @@ package com.github.purofle.remakebot.parser.xhs
 
 import com.github.purofle.remakebot.data.xhs.XhsImage
 import com.github.purofle.remakebot.data.xhs.XhsNote
+import com.github.purofle.remakebot.data.xhs.XhsStream
 import com.github.purofle.remakebot.data.xhs.XhsStreamEntry
 import com.github.purofle.remakebot.network.HttpRequest
 import com.github.purofle.remakebot.parser.Author
@@ -65,8 +66,15 @@ class XhsParser(override val text: String, val cookie: String?) : TextMediaParse
 
     private fun parsePhotos(fetched: XhsNoteResult, author: Author?, noteUrl: String): MediaResource.Photos {
         val note = fetched.note
-        val photoUrls = note.imageList.mapNotNull { photoUrl(it) }
-        if (photoUrls.isEmpty()) error("未获取到笔记图片")
+        val photos = note.imageList.mapNotNull { image ->
+            photoUrl(image)?.let { url ->
+                val liveVideoUrl = if (image.livePhoto) {
+                    selectStream(image.stream)?.masterUrl ?: error("未获取到实况照片视频流")
+                } else null
+                MediaResource.Photo(url, liveVideoUrl)
+            }
+        }
+        if (photos.isEmpty()) error("未获取到笔记图片")
 
         return MediaResource.Photos(
             id = fetched.noteId,
@@ -75,13 +83,13 @@ class XhsParser(override val text: String, val cookie: String?) : TextMediaParse
             platform = MediaPlatform.RedNote,
             url = noteUrl,
             caption = buildCaption(note, author, noteUrl),
-            photoUrls = photoUrls,
+            photos = photos,
         )
     }
 
     private fun parseVideo(fetched: XhsNoteResult, author: Author?, noteUrl: String): MediaResource.Video {
         val note = fetched.note
-        val stream = selectStream(note)
+        val stream = selectStream(note.video?.media?.stream)
         val videoUrl = originVideoUrl(note) ?: stream?.masterUrl ?: error("未获取到视频流")
         val coverUrl = note.imageList.firstOrNull()?.let { it.urlDefault.ifBlank { it.url } }?.takeIf { it.isNotBlank() }
             ?: error("未获取到视频封面")
@@ -162,9 +170,8 @@ class XhsParser(override val text: String, val cookie: String?) : TextMediaParse
             note.video?.consumer?.originVideoKey?.takeIf { it.isNotBlank() }?.let { "$ORIGIN_VIDEO_HOST/$it" }
 
         /** h264 first, then the newer codecs, taking the first entry that actually has a URL. */
-        private fun selectStream(note: XhsNote): XhsStreamEntry? {
-            val stream = note.video?.media?.stream ?: return null
-
+        private fun selectStream(stream: XhsStream?): XhsStreamEntry? {
+            stream ?: return null
             return listOf(stream.h264, stream.av1, stream.h265, stream.h266)
                 .firstNotNullOfOrNull { entries -> entries.firstOrNull { it.masterUrl.isNotBlank() } }
         }

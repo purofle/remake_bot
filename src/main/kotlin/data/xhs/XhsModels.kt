@@ -73,6 +73,8 @@ data class XhsImage(
     val url: String = "",
     /** The path of the original on the photo host, only on the mobile page. */
     @SerialName("fileId") val fileId: String = "",
+    val livePhoto: Boolean = false,
+    val stream: XhsStream? = null,
 )
 
 @Serializable
