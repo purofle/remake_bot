@@ -51,7 +51,7 @@ sealed interface MediaResource {
     ): MediaResource
 
     /**
-     * @param photoUrls direct links to the photos, in the order they are shown.
+     * @param photos photos in the order they are shown, with a video URL for each live photo.
      */
     data class Photos(
         override val id: String,
@@ -60,6 +60,11 @@ sealed interface MediaResource {
         override val platform: MediaPlatform,
         override val url: String,
         override val caption: FormattedText,
-        val photoUrls: List<String>,
+        val photos: List<Photo>,
     ): MediaResource
+
+    data class Photo(
+        val url: String,
+        val liveVideoUrl: String? = null,
+    )
 }

@@ -20,9 +20,11 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
 import org.telegram.telegrambots.meta.api.methods.send.SendChatAction
+import org.telegram.telegrambots.meta.api.methods.send.SendLivePhoto
 import org.telegram.telegrambots.meta.api.methods.send.SendMediaGroup
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto
 import org.telegram.telegrambots.meta.api.objects.InputFile
+import org.telegram.telegrambots.meta.api.objects.ReplyParameters
 import org.telegram.telegrambots.meta.api.objects.media.InputMediaPhoto
 import org.telegram.telegrambots.meta.api.objects.message.Message
 import java.io.File
@@ -51,10 +53,42 @@ class MediaSender(
     private suspend fun sendPhotos(photos: MediaResource.Photos, message: Message) {
         telegramClient.executeAwait(SendChatAction.builder().chatId(message.chatId).action("upload_photo").build())
 
-        logger.info { "Downloading ${photos.photoUrls.size} ${photos.platform} photos: ${photos.title}" }
+        logger.info { "Downloading ${photos.photos.size} ${photos.platform} photos: ${photos.title}" }
+
+        if (photos.photos.any { it.liveVideoUrl != null }) {
+            photos.photos.forEachIndexed { index, photo ->
+                val image = HttpRequest.getAsByteArray(photo.url)
+                val liveVideo = photo.liveVideoUrl?.let { HttpRequest.getAsByteArray(it) }
+                withContext(Dispatchers.IO) {
+                    if (liveVideo != null) {
+                        telegramClient.execute(SendLivePhoto.builder().apply {
+                            chatId(message.chatId)
+                            livePhoto(InputFile(liveVideo.inputStream(), "live.mp4"))
+                            photo(InputFile(image.inputStream(), "photo.jpg"))
+                            if (index == 0) {
+                                caption(photos.caption.text)
+                                captionEntities(photos.caption.toBotApiEntities())
+                            }
+                            replyParameters(ReplyParameters.builder().messageId(message.messageId).build())
+                        }.build())
+                    } else {
+                        telegramClient.execute(SendPhoto.builder().apply {
+                            chatId(message.chatId)
+                            photo(InputFile(image.inputStream(), "photo.jpg"))
+                            if (index == 0) {
+                                caption(photos.caption.text)
+                                captionEntities(photos.caption.toBotApiEntities())
+                            }
+                            replyToMessageId(message.messageId)
+                        }.build())
+                    }
+                }
+            }
+            return
+        }
 
         val images = coroutineScope {
-            photos.photoUrls.map { async { HttpRequest.getAsByteArray(it) } }.awaitAll()
+            photos.photos.map { async { HttpRequest.getAsByteArray(it.url) } }.awaitAll()
         }
         val captionText = photos.caption.text
         val captionEntities = photos.caption.toBotApiEntities()
