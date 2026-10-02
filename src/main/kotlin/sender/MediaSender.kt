@@ -1,5 +1,6 @@
 package com.github.purofle.remakebot.sender
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.purofle.remakebot.cache.VideoFileIdCache
 import com.github.purofle.remakebot.data.cache.CachedVideo
 import com.github.purofle.remakebot.network.HttpRequest
@@ -18,6 +19,10 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
 import org.telegram.telegrambots.meta.api.methods.send.SendChatAction
 import org.telegram.telegrambots.meta.api.methods.send.SendLivePhoto
@@ -39,6 +44,7 @@ private const val MAX_ALBUM_SIZE = 10
 class MediaSender(
     private val td: TdLibBot,
     private val telegramClient: OkHttpTelegramClient,
+    private val botToken: String,
 ) {
 
     suspend fun send(parser: TextMediaParser, message: Message) = when (val resource = parser.parse()) {
@@ -56,32 +62,43 @@ class MediaSender(
         logger.info { "Downloading ${photos.photos.size} ${photos.platform} photos: ${photos.title}" }
 
         if (photos.photos.any { it.liveVideoUrl != null }) {
-            photos.photos.forEachIndexed { index, photo ->
-                val image = HttpRequest.getAsByteArray(photo.url)
-                val liveVideo = photo.liveVideoUrl?.let { HttpRequest.getAsByteArray(it) }
-                withContext(Dispatchers.IO) {
-                    if (liveVideo != null) {
-                        telegramClient.execute(SendLivePhoto.builder().apply {
-                            chatId(message.chatId)
-                            livePhoto(InputFile(liveVideo.inputStream(), "live.mp4"))
-                            photo(InputFile(image.inputStream(), "photo.jpg"))
-                            if (index == 0) {
-                                caption(photos.caption.text)
-                                captionEntities(photos.caption.toBotApiEntities())
-                            }
-                            replyParameters(ReplyParameters.builder().messageId(message.messageId).build())
-                        }.build())
-                    } else {
-                        telegramClient.execute(SendPhoto.builder().apply {
-                            chatId(message.chatId)
-                            photo(InputFile(image.inputStream(), "photo.jpg"))
-                            if (index == 0) {
-                                caption(photos.caption.text)
-                                captionEntities(photos.caption.toBotApiEntities())
-                            }
-                            replyToMessageId(message.messageId)
-                        }.build())
+            photos.photos.chunked(MAX_ALBUM_SIZE).forEachIndexed { chunkIndex, chunk ->
+                val images = coroutineScope {
+                    chunk.map { photo ->
+                        async {
+                            HttpRequest.getAsByteArray(photo.url) to
+                                photo.liveVideoUrl?.let { HttpRequest.getAsByteArray(it) }
+                        }
+                    }.awaitAll()
+                }
+                if (chunk.size == 1) {
+                    val (image, liveVideo) = images.single()
+                    withContext(Dispatchers.IO) {
+                        if (liveVideo != null) {
+                            telegramClient.execute(SendLivePhoto.builder().apply {
+                                chatId(message.chatId)
+                                livePhoto(InputFile(liveVideo.inputStream(), "live.mp4"))
+                                photo(InputFile(image.inputStream(), "photo.jpg"))
+                                if (chunkIndex == 0) {
+                                    caption(photos.caption.text)
+                                    captionEntities(photos.caption.toBotApiEntities())
+                                }
+                                replyParameters(ReplyParameters.builder().messageId(message.messageId).build())
+                            }.build())
+                        } else {
+                            telegramClient.execute(SendPhoto.builder().apply {
+                                chatId(message.chatId)
+                                photo(InputFile(image.inputStream(), "photo.jpg"))
+                                if (chunkIndex == 0) {
+                                    caption(photos.caption.text)
+                                    captionEntities(photos.caption.toBotApiEntities())
+                                }
+                                replyToMessageId(message.messageId)
+                            }.build())
+                        }
                     }
+                } else {
+                    sendLiveAlbum(images, chunkIndex == 0, photos, message)
                 }
             }
             return
@@ -122,6 +139,47 @@ class MediaSender(
                         replyToMessageId(message.messageId)
                     }.build())
                 }
+            }
+        }
+    }
+
+    /** TelegramBots 10.3 cannot attach the static photo of InputMediaLivePhoto in an album. */
+    private suspend fun sendLiveAlbum(
+        images: List<Pair<ByteArray, ByteArray?>>,
+        firstChunk: Boolean,
+        photos: MediaResource.Photos,
+        message: Message,
+    ) = withContext(Dispatchers.IO) {
+        val body = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("chat_id", message.chatId.toString())
+            .addFormDataPart("reply_to_message_id", message.messageId.toString())
+        val media = images.mapIndexed { index, (image, liveVideo) ->
+            val entry = linkedMapOf<String, Any>(
+                "type" to if (liveVideo != null) "live_photo" else "photo",
+                "media" to "attach://media$index",
+            )
+            if (liveVideo != null) {
+                entry["photo"] = "attach://photo$index"
+                body.addFormDataPart("media$index", "live$index.mp4", liveVideo.toRequestBody("video/mp4".toMediaType()))
+                body.addFormDataPart("photo$index", "photo$index.jpg", image.toRequestBody("image/jpeg".toMediaType()))
+            } else {
+                body.addFormDataPart("media$index", "photo$index.jpg", image.toRequestBody("image/jpeg".toMediaType()))
+            }
+            if (firstChunk && index == 0) {
+                entry["caption"] = photos.caption.text
+                entry["caption_entities"] = photos.caption.toBotApiEntities()
+            }
+            entry
+        }
+        body.addFormDataPart("media", ObjectMapper().writeValueAsString(media))
+
+        val request = Request.Builder()
+            .url("https://api.telegram.org/bot$botToken/sendMediaGroup")
+            .post(body.build())
+            .build()
+        HttpRequest.client.newCall(request).execute().use { response ->
+            check(response.isSuccessful) {
+                "Telegram Live Photo 相册发送失败 (HTTP ${response.code}): ${response.body.string().take(200)}"
             }
         }
     }

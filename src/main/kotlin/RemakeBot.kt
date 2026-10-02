@@ -29,7 +29,7 @@ class RemakeBot(
 
     private val telegramClient by lazy { OkHttpTelegramClient(botToken) }
 
-    private val mediaSender by lazy { MediaSender(td, telegramClient) }
+    private val mediaSender by lazy { MediaSender(td, telegramClient, botToken) }
 
     private val scope = CoroutineScope(
         SupervisorJob() + Dispatchers.IO +
