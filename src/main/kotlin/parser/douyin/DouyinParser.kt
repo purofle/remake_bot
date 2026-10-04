@@ -38,7 +38,7 @@ class DouyinParser(override val text: String, private val cookie: String?) : Tex
 
         if (isGallery) {
             if (images.isEmpty()) error("未获取到图文图片")
-            return MediaResource.Photos(id, title, author, MediaPlatform.Douyin, pageUrl, caption, images)
+            return MediaResource.Photos(id, title, author, MediaPlatform.Douyin, pageUrl, caption, images.map { MediaResource.Photo(it) })
         }
 
         val video = post.video ?: error("未获取到抖音作品媒体")
