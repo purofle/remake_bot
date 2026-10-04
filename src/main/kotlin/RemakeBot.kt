@@ -2,6 +2,7 @@ package com.github.purofle.remakebot
 
 import com.github.purofle.remakebot.parser.TextMediaParser
 import com.github.purofle.remakebot.parser.bilibili.BiliBiliParser
+import com.github.purofle.remakebot.parser.douyin.DouyinParser
 import com.github.purofle.remakebot.parser.xhs.XhsParser
 import com.github.purofle.remakebot.sender.MediaSender
 import com.github.purofle.remakebot.tdlib.TdLibBot
@@ -23,6 +24,7 @@ class RemakeBot(
     botToken: String,
     val td: TdLibBot,
     private val xhsCookie: String?,
+    private val douyinCookie: String?,
 ): DefaultLongPollingUpdateConsumer() {
 
     private val telegramClient by lazy { OkHttpTelegramClient(botToken) }
@@ -64,6 +66,7 @@ class RemakeBot(
         val parsers: List<TextMediaParser> = listOf(
             BiliBiliParser(message.text),
             XhsParser(message.text, xhsCookie),
+            DouyinParser(message.text, douyinCookie),
         )
 
         parsers.filter { it.supports() }.forEach { parser ->

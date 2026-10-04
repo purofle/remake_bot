@@ -241,6 +241,7 @@ class MediaSender(
             val prefix = when (resource.platform) {
                 MediaPlatform.BiliBili -> "bili"
                 MediaPlatform.RedNote -> "xhs"
+                MediaPlatform.Douyin -> "douyin"
             }
 
             return "$prefix:${resource.id}"

@@ -3,6 +3,7 @@ package com.github.purofle.remakebot.network
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -11,6 +12,9 @@ import okhttp3.coroutines.executeAsync
 import java.io.File
 
 object HttpRequest {
+    class HttpStatusException(val statusCode: Int, host: String, path: String) :
+        IllegalStateException("HTTP $statusCode for $host$path")
+
     val client = OkHttpClient.Builder()
         .addInterceptor {
             setUserAgent(it)
@@ -43,8 +47,14 @@ object HttpRequest {
         url: String,
         params: Map<String, Any?>? = null,
         requestBuilder: Request.Builder.() -> Request.Builder = { this },
+    ): T = get(url.toHttpUrl(), params, requestBuilder)
+
+    suspend inline fun <reified T> get(
+        url: HttpUrl,
+        params: Map<String, Any?>? = null,
+        requestBuilder: Request.Builder.() -> Request.Builder = { this },
     ): T {
-        val httpUrl = url.toHttpUrl().newBuilder().apply {
+        val httpUrl = url.newBuilder().apply {
             params?.forEach { (name, value) -> addQueryParameter(name, value.toString()) }
         }.build()
 
@@ -58,7 +68,9 @@ object HttpRequest {
 
         return withContext(Dispatchers.IO) {
             client.newCall(request).executeAsync().use {
-                check(it.isSuccessful) { "HTTP ${it.code} for ${it.request.url.host}${it.request.url.encodedPath}" }
+                if (!it.isSuccessful) {
+                    throw HttpStatusException(it.code, it.request.url.host, it.request.url.encodedPath)
+                }
                 if (T::class == String::class) {
                     it.body.string() as T
                 } else {

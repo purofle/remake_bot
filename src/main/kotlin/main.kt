@@ -17,6 +17,7 @@ fun main(): Unit = runBlocking {
 
     // Optional: most xhs notes sit behind a login wall, so without it those links just fail.
     val xhsCookie = System.getenv("XHS_COOKIE")
+    val douyinCookie = System.getenv("DOUYIN_COOKIE")
 
     val td = TdLibBot(
         botToken = botToken,
@@ -28,7 +29,7 @@ fun main(): Unit = runBlocking {
             val tdJob = launch { td.connect() }
 
             TelegramBotsLongPollingApplication().also {
-                it.registerBot(botToken, RemakeBot(botToken, td, xhsCookie))
+                it.registerBot(botToken, RemakeBot(botToken, td, xhsCookie, douyinCookie))
             }
 
             tdJob.join()
