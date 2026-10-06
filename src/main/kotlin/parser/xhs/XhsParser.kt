@@ -91,8 +91,7 @@ class XhsParser(override val text: String, val cookie: String?) : TextMediaParse
         val note = fetched.note
         val stream = selectStream(note.video?.media?.stream)
         val videoUrl = originVideoUrl(note) ?: stream?.masterUrl ?: error("未获取到视频流")
-        val coverUrl = note.imageList.firstOrNull()?.let { it.urlDefault.ifBlank { it.url } }?.takeIf { it.isNotBlank() }
-            ?: error("未获取到视频封面")
+        val coverUrl = note.imageList.firstOrNull()?.let(::photoUrl) ?: error("未获取到视频封面")
 
         return MediaResource.Video(
             // The note id rather than the URL: a share link's own query string carries a rotating
@@ -105,7 +104,7 @@ class XhsParser(override val text: String, val cookie: String?) : TextMediaParse
             caption = buildCaption(note, author, noteUrl),
             videoUrl = videoUrl,
             // The photo host needs no Referer (verified), so the sender can fetch it as is.
-            coverUrl = rawImageUrl(coverUrl),
+            coverUrl = coverUrl,
             duration = note.video?.capa?.duration?.takeIf { it > 0 } ?: ((stream?.duration ?: 0) / 1000).toInt(),
         )
     }
