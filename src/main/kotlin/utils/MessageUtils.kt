@@ -9,12 +9,13 @@ val User.fullName: String
     get() = if (lastName.isNullOrEmpty()) firstName else "$firstName $lastName"
 
 context(client: TelegramClient)
-suspend fun Message.reply(replyText: String) {
+suspend fun Message.reply(replyText: String, replyParseMode: String? = null) {
     val msg = this
     client.executeAwait(SendMessage.builder().apply {
         chatId(msg.chatId)
         text(replyText)
         replyToMessageId(msg.messageId)
+        replyParseMode?.let { parseMode(it) }
     }.build())
 }
 

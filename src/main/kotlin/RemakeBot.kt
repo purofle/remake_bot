@@ -4,6 +4,7 @@ import com.github.purofle.remakebot.parser.TextMediaParser
 import com.github.purofle.remakebot.parser.bilibili.BiliBiliParser
 import com.github.purofle.remakebot.parser.douyin.DouyinParser
 import com.github.purofle.remakebot.parser.xhs.XhsParser
+import com.github.purofle.remakebot.quotely.buildQuoteReply
 import com.github.purofle.remakebot.sender.MediaSender
 import com.github.purofle.remakebot.tdlib.TdLibBot
 import com.github.purofle.remakebot.utils.fullName
@@ -14,6 +15,7 @@ import kotlinx.coroutines.*
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
 import org.telegram.telegrambots.longpolling.util.DefaultLongPollingUpdateConsumer
 import org.telegram.telegrambots.meta.api.methods.GetMe
+import org.telegram.telegrambots.meta.api.methods.ParseMode
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.message.Message
@@ -62,6 +64,12 @@ class RemakeBot(
 
     context(_: OkHttpTelegramClient)
     private suspend fun dispatchMessage(message: Message) {
+
+        val quoteReply = buildQuoteReply(message)
+        if (quoteReply != null) {
+            message.reply(quoteReply, ParseMode.MARKDOWNV2)
+            return
+        }
 
         val parsers: List<TextMediaParser> = listOf(
             BiliBiliParser(message.text),
