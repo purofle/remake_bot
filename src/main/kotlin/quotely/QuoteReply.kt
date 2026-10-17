@@ -14,15 +14,14 @@ private val MARKDOWN_V2_SPECIALS = setOf(
 )
 
 /**
- * Renders the quote reply for a message that replies to another message, or returns null when
- * [message] is not a quote command or is not a reply.
+ * Renders the quote reply for a message, or returns null when [message] is not a quote command.
  *
  * A quote command starts with `/` (or `\` to swap actor and target) followed by a non-ASCII
  * command word, or by `$` when the command word is ASCII. `/$time` and `$time` in the text are
  * replaced with the message timestamp. Like the original bot this is rendered as MarkdownV2.
  *
- * The target is the sender of the replied-to message, or the sender itself when the reply points
- * at a forum topic root.
+ * The target is the sender of the replied-to message, or the sender itself when there is no reply
+ * or the reply points at a forum topic root.
  */
 fun buildQuoteReply(message: Message): String? {
     val source = message.text ?: return null
@@ -30,8 +29,6 @@ fun buildQuoteReply(message: Message): String? {
 
     // ASCII commands are bot commands unless they use the `$` escape; non-ASCII words cannot collide with them.
     if ((source[0] != '/' && source[0] != '\\') || (source[1].code < 0x80 && source[1] != '$')) return null
-
-    val replyToMessage = message.replyToMessage ?: return null
 
     val timestamp = Instant.ofEpochSecond((message.date ?: 0).toLong())
         .atZone(ZoneId.systemDefault())
@@ -48,8 +45,8 @@ fun buildQuoteReply(message: Message): String? {
 
     val sender = message.senderIdentity() ?: return null
 
-    val replyTo = replyToMessage
-        .takeUnless { message.isTopicMessage() && it.messageId == message.messageThreadId }
+    val replyTo = message.replyToMessage
+        ?.takeUnless { message.isTopicMessage() && it.messageId == message.messageThreadId }
     val target = replyTo?.senderIdentity(followTextMention = true) ?: ("自己" to sender.second)
 
     val reversed = source.startsWith("\\")
