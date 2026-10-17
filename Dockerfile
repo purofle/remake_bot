@@ -1,18 +1,11 @@
-FROM azul/zulu-openjdk-alpine:26-latest AS build
+FROM --platform=$BUILDPLATFORM azul/zulu-openjdk-alpine:26-latest AS build
 
 WORKDIR /remake_bot
-
-COPY gradlew settings.gradle.kts build.gradle.kts gradle.properties ./
-COPY gradle ./gradle
-COPY tdlib/build.gradle.kts ./tdlib/
-
-RUN --mount=type=cache,target=/root/.gradle \
-    chmod +x gradlew && ./gradlew --no-daemon dependencies > /dev/null
 
 COPY . .
 
 RUN --mount=type=cache,target=/root/.gradle \
-    ./gradlew --no-daemon fatJar
+    chmod +x gradlew && ./gradlew --no-daemon fatJar
 
 
 # libtdjni.so is linked against glibc and LLVM libc++, so the runner can't be Alpine (musl).
