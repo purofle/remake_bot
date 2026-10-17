@@ -19,6 +19,7 @@ import org.telegram.telegrambots.meta.api.methods.ParseMode
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.message.Message
+import java.io.File
 import java.lang.management.ManagementFactory
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -102,10 +103,12 @@ class RemakeBot(
             }
             "/status" -> {
                 val runtime = Runtime.getRuntime()
+                val resident = processResidentMemoryBytes()
                 val botUptime = ManagementFactory.getRuntimeMXBean().uptime.milliseconds
                 message.reply("""
-                    已用内存：${(runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024} MB
-                    Bot 已稳定运行：${botUptime}
+                    进程内存：${resident?.let { "${it / 1024 / 1024} MB" } ?: "未知"}
+                    堆内存：${(runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024} MB
+                    Bot 已稳定运行：$botUptime
                     目前平台：${System.getProperty("os.name")} ${System.getProperty("os.version")} ${System.getProperty("os.arch")}
                 """.trimIndent())
             }
@@ -134,3 +137,15 @@ class RemakeBot(
         }
     }
 }
+
+/** Resident set size of this process, including heap, metaspace, thread stacks and native allocations. */
+internal fun processResidentMemoryBytes(): Long? = runCatching {
+    File("/proc/self/status").useLines { lines ->
+        lines.firstOrNull { it.startsWith("VmRSS:") }
+            ?.substringAfter(':')
+            ?.trim()
+            ?.substringBefore(' ')
+            ?.toLong()
+            ?.times(1024)
+    }
+}.getOrNull()
