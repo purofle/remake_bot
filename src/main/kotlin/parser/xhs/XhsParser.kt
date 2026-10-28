@@ -14,6 +14,7 @@ import com.github.purofle.remakebot.utils.MAX_CAPTION_LENGTH
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.drinkless.tdlib.TdApi.FormattedText
 import java.io.File
+import java.io.IOException
 
 private const val NOTE_TYPE_VIDEO = "video"
 
@@ -87,10 +88,38 @@ class XhsParser(override val text: String, val cookie: String?) : TextMediaParse
         )
     }
 
-    private fun parseVideo(fetched: XhsNoteResult, author: Author?, noteUrl: String): MediaResource.Video {
+    private suspend fun parseVideo(
+        fetched: XhsNoteResult,
+        author: Author?,
+        noteUrl: String,
+    ): MediaResource.Video {
         val note = fetched.note
-        val stream = selectStream(note.video?.media?.stream)
-        val videoUrl = originVideoUrl(note) ?: stream?.masterUrl ?: error("未获取到视频流")
+        val origin = originVideoUrl(note)
+        val streams = note.video?.media?.stream?.let {
+            it.h264 + it.av1 + it.h265 + it.h266
+        }.orEmpty().filter { it.masterUrl.isNotBlank() }
+        val candidates = buildSet {
+            origin?.let { add(it) }
+            streams.forEach { add(it.masterUrl) }
+        }
+        var smallest: Pair<String, Long>? = null
+        var selected: String? = null
+        for (url in candidates) {
+            val size = try {
+                HttpRequest.contentLength(url) { header("Referer", XHS_REFERER) }
+            } catch (e: IOException) {
+                logger.debug(e) { "Cannot probe video size; trying the next candidate" }
+                null
+            } ?: continue
+            if (size < MAX_VIDEO_BYTES) {
+                selected = url
+                break
+            }
+            if (smallest == null || size < smallest.second) smallest = url to size
+        }
+        val videoUrl = selected ?: smallest?.first ?: selectVideoFallbackStream(note)?.masterUrl
+            ?: origin ?: error("未获取到视频流")
+        val stream = streams.firstOrNull { it.masterUrl == videoUrl }
         val coverUrl = note.imageList.firstOrNull()?.let(::photoUrl) ?: error("未获取到视频封面")
 
         return MediaResource.Video(
@@ -159,20 +188,39 @@ class XhsParser(override val text: String, val cookie: String?) : TextMediaParse
             return image.urlDefault.ifBlank { image.url }.takeIf { it.isNotBlank() }?.let { "${rawImageUrl(it)}$JPEG_QUERY" }
         }
 
+        private const val MAX_VIDEO_BYTES = 100L * 1024 * 1024
+
         /**
          * Serves the originally uploaded file by its key, without a signature, cookie or Referer.
-         * It is the best quality there is, so it is preferred over the transcoded streams.
+         * Tried first when its size is below the download target.
          */
         private const val ORIGIN_VIDEO_HOST = "https://sns-video-bd.xhscdn.com"
 
         private fun originVideoUrl(note: XhsNote): String? =
             note.video?.consumer?.originVideoKey?.takeIf { it.isNotBlank() }?.let { "$ORIGIN_VIDEO_HOST/$it" }
 
-        /** h264 first, then the newer codecs, taking the first entry that actually has a URL. */
+        /** Preserve the upstream stream order for live photos. */
         private fun selectStream(stream: XhsStream?): XhsStreamEntry? {
             stream ?: return null
             return listOf(stream.h264, stream.av1, stream.h265, stream.h266)
                 .firstNotNullOfOrNull { entries -> entries.firstOrNull { it.masterUrl.isNotBlank() } }
+        }
+
+        /**
+         * Fallback when no candidate has a known size. Prefer H.264, then newer codecs. Take
+         * the highest resolution up to 720p (short side, including portrait videos). If all known
+         * resolutions exceed that, take the smallest.
+         */
+        private fun selectVideoFallbackStream(note: XhsNote): XhsStreamEntry? {
+            val stream = note.video?.media?.stream ?: return null
+
+            return listOf(stream.h264, stream.av1, stream.h265, stream.h266)
+                .firstNotNullOfOrNull { entries ->
+                    val available = entries.filter { it.masterUrl.isNotBlank() }
+                    val withinTarget = available.filter { minOf(it.width, it.height) <= 720 }
+                    withinTarget.maxByOrNull { it.width.toLong() * it.height }
+                        ?: available.minByOrNull { it.width.toLong() * it.height }
+                }
         }
 
         /**
