@@ -84,7 +84,9 @@ class TdLibBot(
         from: Long,
         fromMessage: Int,
         caption: FormattedText,
-        videoDuration: Int
+        videoDuration: Int,
+        videoWidth: Int,
+        videoHeight: Int,
     ): Message = withContext(Dispatchers.IO) {
         val tmpCoverFile = File.createTempFile("tdlib", ".jpg")
         try {
@@ -94,6 +96,8 @@ class TdLibBot(
                 video = InputFileLocal(videoFile.absolutePath)
                 cover = InputFileLocal(tmpCoverFile.absolutePath)
                 duration = videoDuration
+                width = videoWidth
+                height = videoHeight
                 supportsStreaming = true
             }
             sendVideo(inputVideo, from, fromMessage, caption)
@@ -113,12 +117,16 @@ class TdLibBot(
         from: Long,
         fromMessage: Int,
         caption: FormattedText,
-        videoDuration: Int
+        videoDuration: Int,
+        videoWidth: Int,
+        videoHeight: Int,
     ): Message = withContext(Dispatchers.IO) {
         val inputVideo = InputVideo().apply {
             video = InputFileRemote(videoRemoteId)
             cover = InputFileRemote(coverRemoteId)
             duration = videoDuration
+            width = videoWidth
+            height = videoHeight
             supportsStreaming = true
         }
 

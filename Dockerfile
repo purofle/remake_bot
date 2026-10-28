@@ -15,7 +15,7 @@ ARG TARGETARCH
 
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        libc++1-15 libc++abi1-15 libunwind-15 libssl3 zlib1g \
+        libc++1-15 libc++abi1-15 libunwind-15 libssl3 zlib1g ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

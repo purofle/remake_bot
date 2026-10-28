@@ -12,6 +12,8 @@ data class CachedVideo(
     @SerialName("video_remote_id") val videoRemoteId: String,
     @SerialName("cover_remote_id") val coverRemoteId: String,
     val duration: Int,
+    val width: Int,
+    val height: Int,
 )
 
 /**
