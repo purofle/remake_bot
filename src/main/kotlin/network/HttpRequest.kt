@@ -93,6 +93,28 @@ object HttpRequest {
         }
     }
 
+    /** Some CDNs only expose size on a range GET. */
+    suspend fun contentLength(
+        url: String,
+        requestBuilder: Request.Builder.() -> Request.Builder = { this },
+    ): Long? {
+        val request = Request.Builder().url(url.toHttpUrl())
+            .requestBuilder().header("Accept-Encoding", "identity").head().build()
+        client.newCall(request).executeAsync().use { response ->
+            if (response.isSuccessful) {
+                response.header("Content-Length")?.toLongOrNull()?.takeIf { it > 0 }?.let { return it }
+            }
+        }
+        val rangeRequest = request.newBuilder().get().header("Range", "bytes=0-0").build()
+        return client.newCall(rangeRequest).executeAsync().use { response ->
+            when (response.code) {
+                206 -> response.header("Content-Range")?.substringAfterLast('/')?.toLongOrNull()
+                200 -> response.header("Content-Length")?.toLongOrNull()
+                else -> null
+            }?.takeIf { it > 0 }
+        }
+    }
+
     /**
      * Streams the response body into [target] instead of buffering it in memory, so large videos do
      * not have to fit in the heap. [requestBuilder] is for hosts that want a Referer or a Cookie.
