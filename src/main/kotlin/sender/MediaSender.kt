@@ -10,6 +10,7 @@ import com.github.purofle.remakebot.parser.TextMediaParser
 import com.github.purofle.remakebot.tdlib.TdLibBot
 import com.github.purofle.remakebot.text.toBotApiEntities
 import com.github.purofle.remakebot.utils.CacheLocks
+import com.github.purofle.remakebot.utils.VideoProbe
 import com.github.purofle.remakebot.utils.executeAwait
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CancellationException
@@ -197,7 +198,10 @@ class MediaSender(
             if (cached != null) {
                 logger.info { "Reusing cached video file for $cacheKey" }
                 try {
-                    td.sendVideoWithRemoteIds(cached.videoRemoteId, cached.coverRemoteId, message.chatId, message.messageId, caption, cached.duration)
+                    td.sendVideoWithRemoteIds(
+                        cached.videoRemoteId, cached.coverRemoteId, message.chatId, message.messageId,
+                        caption, cached.duration, cached.width, cached.height,
+                    )
                     VideoFileIdCache.reportCacheSuccess(cacheKey)
                     return
                 } catch (e: CancellationException) {
@@ -214,9 +218,13 @@ class MediaSender(
             logger.info { "Downloading ${video.platform} video: ${video.title}, url: ${video.videoUrl}" }
 
             val videoFile = File.createTempFile(video.platform.name.lowercase(), ".mp4")
-            val sentMessage = try {
+            val (sentMessage, dimensions) = try {
                 parser.downloadVideo(video, videoFile)
-                td.uploadVideoWithMessage(videoFile, cover, message.chatId, message.messageId, caption, video.duration)
+                val dimensions = withContext(Dispatchers.IO) { VideoProbe.read(videoFile) }
+                td.uploadVideoWithMessage(
+                    videoFile, cover, message.chatId, message.messageId, caption, video.duration,
+                    dimensions.width, dimensions.height,
+                ) to dimensions
             } finally {
                 videoFile.delete()
             }
@@ -225,7 +233,12 @@ class MediaSender(
             if (remoteIds == null) {
                 logger.debug { "No reusable remote file ids for $cacheKey, not caching it" }
             } else {
-                VideoFileIdCache.put(cacheKey, CachedVideo(remoteIds.videoRemoteId, remoteIds.coverRemoteId, video.duration))
+                VideoFileIdCache.put(
+                    cacheKey,
+                    CachedVideo(
+                        remoteIds.videoRemoteId, remoteIds.coverRemoteId, video.duration, dimensions.width, dimensions.height,
+                    ),
+                )
             }
         }
     }
