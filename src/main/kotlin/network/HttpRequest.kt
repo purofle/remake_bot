@@ -10,12 +10,16 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.coroutines.executeAsync
 import java.io.File
+import java.util.concurrent.TimeUnit
 
 object HttpRequest {
     class HttpStatusException(val statusCode: Int, host: String, path: String) :
         IllegalStateException("HTTP $statusCode for $host$path")
 
     val client = OkHttpClient.Builder()
+        .connectTimeout(60, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS)
         .addInterceptor {
             setUserAgent(it)
         }
