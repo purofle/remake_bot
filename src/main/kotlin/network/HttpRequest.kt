@@ -41,6 +41,11 @@ object HttpRequest {
         ?.build()
         .let { chain.proceed(it ?: chain.request()) }
 
+    suspend fun resolveUrl(url: String): String = withContext(Dispatchers.IO) {
+        val request = Request.Builder().url(url.toHttpUrl()).build()
+        client.newCall(request).executeAsync().use { it.request.url.toString() }
+    }
+
     /**
      * @param url the URL to request
      * @param params optional query parameters

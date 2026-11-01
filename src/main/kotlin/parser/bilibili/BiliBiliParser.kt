@@ -75,7 +75,9 @@ class BiliBiliParser(override val text: String) : TextMediaParser {
 
         val url = B23_URL_REGEX.find(text)?.value ?: error("Invalid b23.tv URL: $text")
 
-        return extractVideoId(HttpRequest.get<String>(url)) ?: error("未能从短链接解析出视频：$url")
+        val resolvedUrl = HttpRequest.resolveUrl(url)
+        return VIDEO_URL_REGEX.matchAt(resolvedUrl, 0)?.groupValues?.get(1)?.let { toVideoId(it) }
+            ?: error("未能从短链接解析出视频：$url")
     }
 
     companion object {
@@ -86,15 +88,9 @@ class BiliBiliParser(override val text: String) : TextMediaParser {
 
         private val VIDEO_URL_REGEX = Regex("""https?://(?:www\.|m\.)?bilibili\.com/video/($VIDEO_ID)""")
 
-        /** Only for the page a `b23.tv` link redirects to, where the first id is the video's own. */
-        private val PAGE_VIDEO_ID_REGEX = Regex("""(?:av|AV|aV|Av)\d+|BV\w+""")
-
         private val B23_URL_REGEX = Regex("""https?://b23\.tv/\w+""")
 
         private val logger = KotlinLogging.logger("BiliBiliParser")
-
-        private fun extractVideoId(page: String): VideoId? =
-            PAGE_VIDEO_ID_REGEX.find(page)?.let { toVideoId(it.value) }
 
         private fun toVideoId(id: String): VideoId {
             logger.debug { "Extracting video id: $id" }
