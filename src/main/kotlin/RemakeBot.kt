@@ -1,5 +1,6 @@
 package com.github.purofle.remakebot
 
+import com.github.purofle.remakebot.network.HttpRequest
 import com.github.purofle.remakebot.parser.TextMediaParser
 import com.github.purofle.remakebot.parser.bilibili.BiliBiliParser
 import com.github.purofle.remakebot.parser.douyin.DouyinParser
@@ -30,7 +31,7 @@ class RemakeBot(
     private val douyinCookie: String?,
 ): DefaultLongPollingUpdateConsumer() {
 
-    private val telegramClient by lazy { OkHttpTelegramClient(botToken) }
+    private val telegramClient by lazy { OkHttpTelegramClient(HttpRequest.client, botToken) }
 
     private val mediaSender by lazy { MediaSender(td, telegramClient, botToken) }
 
